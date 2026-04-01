@@ -27,7 +27,7 @@ if [[ -r ${PATH_CONFIG} ]]; then
 	source "${PATH_CONFIG}"
 else
 	echo "<4>WARN: No config file found at ${PATH_CONFIG}. Using defaults ..."
-	source "${PATH_CONFIG}"
+	source "${PATH_DEFAULTS}"
 fi
 
 function main() { # ${host} ${tags}
@@ -77,7 +77,7 @@ function main() { # ${host} ${tags}
 		read -p ">> " ansible_playbook_path
 	fi
 
-	# build playbook path
+	# build inventory path
 	if [[ -f "${ANSIBLE_REPO_PATH}/inventory/inventory.yml" ]]; then
 		ansible_inventory_path="${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
 	else
