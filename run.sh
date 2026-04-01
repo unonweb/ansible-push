@@ -16,7 +16,6 @@ while true; do
 	if [[ ${exit_code} -ne 0 ]]; then
 		echo -e "${MAGENTA}Script returned error code: ${exit_code}${RESET}"
 		echo
-		read -p "Press Enter to exit ..."
-		break
+		read -p "Press Enter to start again ..."
 	fi
 done
