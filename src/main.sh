@@ -32,8 +32,8 @@ fi
 
 function main() { # ${host} ${tags}
 
-	local host=${1:-""}
-	local tags=${2:-""}
+	ANSIBLE_HOST=${1:-""}
+	ANSIBLE_TAGS=${2:-""}
 
 	local vault_host_creds
 	local vault_all_creds
@@ -56,19 +56,19 @@ function main() { # ${host} ${tags}
 		return 1
 	fi
 
-	if [[ -z "${host}" ]]; then
+	if [[ -z "${ANSIBLE_HOST}" ]]; then
 		echo
 		echo -e "${CYAN}Enter host name${CLEAR}"
 		if [[ ${#HOSTS[@]} -gt 0 ]]; then
 			echo -e "${GREY}Leave empty for suggestions${CLEAR}"
 		fi
-		read -p ">> " host
-		if [[ -z "${host}" ]]; then
+		read -p ">> " ANSIBLE_HOST
+		if [[ -z "${ANSIBLE_HOST}" ]]; then
 			select item in "${HOSTS[@]}"; do
 				if [ -n "${item}" ]; then
 					# remove " [user]" from the host string
-					host="${item%% \[*}" # remove " [*" from the end
-					echo "-> ${host}"
+					ANSIBLE_HOST="${item%% \[*}" # remove " [*" from the end
+					echo "-> ${ANSIBLE_HOST}"
 					break
 				else
 					echo "Invalid selection. Try again."
@@ -78,36 +78,36 @@ function main() { # ${host} ${tags}
 	fi
 
 	# build playbook path
-	if [[ -f "${ANSIBLE_REPO_PATH}/playbooks/${host}.yml" ]]; then
-		ansible_playbook_path="${ANSIBLE_REPO_PATH}/playbooks/${host}.yml"
-	elif [[ -f "${ANSIBLE_REPO_PATH}/playbooks/hosts.${host}.yml" ]]; then
-		ansible_playbook_path="${ANSIBLE_REPO_PATH}/playbooks/hosts.${host}.yml"
+	if [[ -f "${ANSIBLE_REPO_PATH}/playbooks/${ANSIBLE_HOST}.yml" ]]; then
+		ANSIBLE_PLAYBOOK_PATH="${ANSIBLE_REPO_PATH}/playbooks/${ANSIBLE_HOST}.yml"
+	elif [[ -f "${ANSIBLE_REPO_PATH}/playbooks/hosts.${ANSIBLE_HOST}.yml" ]]; then
+		ANSIBLE_PLAYBOOK_PATH="${ANSIBLE_REPO_PATH}/playbooks/hosts.${ANSIBLE_HOST}.yml"
 	else
 		echo "ERROR: Path to playbook not found. Tried:"
-		echo "${ANSIBLE_REPO_PATH}/playbooks/${host}.yml"
-		echo "${ANSIBLE_REPO_PATH}/playbooks/hosts.${host}.yml"
+		echo "${ANSIBLE_REPO_PATH}/playbooks/${ANSIBLE_HOST}.yml"
+		echo "${ANSIBLE_REPO_PATH}/playbooks/hosts.${ANSIBLE_HOST}.yml"
 		echo -e "${CYAN}Enter path${CLEAR}"
-		read -p ">> " ansible_playbook_path
+		read -p ">> " ANSIBLE_PLAYBOOK_PATH
 	fi
 
 	# build inventory path
 	if [[ -f "${ANSIBLE_REPO_PATH}/inventory/inventory.yml" ]]; then
-		ansible_inventory_path="${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
+		ANSIBLE_INVENTORY_PATH="${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
 	else
 		echo "ERROR: Path to inventory not found. Tried:"
 		echo "${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
 		return 1
 	fi
 
-	if [[ -z "${tags}" ]]; then
+	if [[ -z "${ANSIBLE_TAGS}" ]]; then
 		echo
 		echo -e "${CYAN}Enter tags${CLEAR}"
 		echo -e "${GREY}Separator: comma${CLEAR}"
 		echo -e "${GREY}Leave empty for suggestions${CLEAR}"
-		read -p ">> " tags
-		if [[ -z "${tags}" ]]; then
+		read -p ">> " ANSIBLE_TAGS
+		if [[ -z "${ANSIBLE_TAGS}" ]]; then
 			# Extracting TASK TAGS line
-			local output_list_tags=$(ansible-playbook --list-tags --inventory "${ansible_inventory_path}" "${ansible_playbook_path}")
+			local output_list_tags=$(ansible-playbook --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
 			#task_tags_line=$(echo "${output_list_tags}" | grep "TASK TAGS:")
 			# Removing the prefix and brackets
 			task_tags_line="${output_list_tags#*TASK TAGS: }" # Remove from the beginning until TASK TAGS: 
@@ -119,7 +119,7 @@ function main() { # ${host} ${tags}
 			select tag in "${tags_array[@]}"; do
 				if [ -n "${tag}" ]; then
 					echo "-> ${tag}"
-					tags="${tag}"
+					ANSIBLE_TAGS="${tag}"
 					break
 				else
 					echo "Invalid selection. Try again."
@@ -129,7 +129,7 @@ function main() { # ${host} ${tags}
 	fi
 
 	# how shall ansible prompt for vault with id corresponding to host
-	if [[ "${host}" = "$(hostname)" ]]; then
+	if [[ "${ANSIBLE_HOST}" = "$(hostname)" ]]; then
 		if [[ -x "${VAULT_HOST_CREDS_LOOKUP_PATH}" ]]; then
 			vault_host_creds="${VAULT_HOST_CREDS_LOOKUP_PATH}"
 		else
@@ -150,19 +150,19 @@ function main() { # ${host} ${tags}
 
 	# build cmd
 	local CMD="${ansible_exec_path}"
-	CMD+=" --inventory=${ansible_inventory_path}"
-	CMD+=" --tags "${tags}""
+	CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
+	CMD+=" --tags "${ANSIBLE_TAGS}""
 	if ((USE_VAULT_ALL)); then
 		CMD+=" --vault-id=all@${vault_all_creds}"
 	fi
 	if ((USE_VAULT_HOST)); then
-		CMD+=" --vault-id=${host}@${vault_host_creds}"
+		CMD+=" --vault-id=${ANSIBLE_HOST}@${vault_host_creds}"
 	fi
-	CMD+=" ${ansible_playbook_path}"
+	CMD+=" ${ANSIBLE_PLAYBOOK_PATH}"
 
 	# feedback
 	echo
-	echo -e "${CYAN}Running ansible on host "${host}" with tags: "${tags}"${CLEAR} ..."
+	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags: "${ANSIBLE_TAGS}"${CLEAR} ..."
 	echo -en "${GREY}"
 	echo ${CMD}
 	echo -en "${CLEAR}"
