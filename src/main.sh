@@ -16,10 +16,12 @@ MAGENTA="\e[35m"
 GREY="${ESC}[37m"
 CYAN="\e[36m"
 UNDERLINE="${ESC}[4m"
+BLINKINK="\033[5m"
 
 # CONFIG & DEFAULTS
 PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
+PATH_DATA="${SCRIPT_PARENT}/data"
 USE_VAULT_ALL=1
 USE_VAULT_HOST=1
 
@@ -30,7 +32,214 @@ else
 	source "${PATH_DEFAULTS}"
 fi
 
-function main() { # ${host} ${tags}
+function set_tags {
+	# requires: 
+	# - ANSIBLE_INVENTORY_PATH
+	# - ANSIBLE_PLAYBOOK_PATH
+	# sets:
+	# - ANSIBLE_TAGS
+
+	local tags_query
+	local available_tags=()
+	local out_name=$(basename ${ANSIBLE_PLAYBOOK_PATH})
+	out_name="${out_name//.yml}" # remove .yml
+	local out_path="${PATH_DATA}/tags.${out_name}"
+	local run_tag_extraction=true
+
+	# Check if the output file already exists
+    if [[ -f "${out_path}" ]]; then
+		echo
+		echo "Tag list found: ${out_path}"
+		echo -e "${CYAN}Use it?${CLEAR} (Enter)"
+		echo -e "${CYAN}Recreate it?${CLEAR} (r)"
+        read -p ">> " choice
+        case "${choice}" in
+            r)
+				run_tag_extraction=true;;
+            *) 
+				run_tag_extraction=false;;
+        esac
+    fi
+
+	if [[ "${run_tag_extraction}" == true ]]; then
+		# get available tags
+		echo
+		echo -e "${BLINKINK}Searching for tags associated with playbook ...${CLEAR}"
+		# Extracting TASK TAGS line
+		local output_list_tags=$(ansible-playbook --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
+		# Removing the prefix and brackets
+		task_tags_line="${output_list_tags#*TASK TAGS: }" # Remove from the beginning until TASK TAGS: 
+		task_tags_line="${task_tags_line//[\[\]]/}" # Remove brackets
+		# Converting the string into an array using IFS
+		IFS=', ' read -r -a available_tags <<< "${task_tags_line}"
+
+		if [[ ${#available_tags[@]} -eq 0 ]]; then
+			echo "ERROR: Could not find any tags with playbook: ${ANSIBLE_PLAYBOOK_PATH} and inventory: ${ANSIBLE_INVENTORY_PATH}"
+			exit 1
+		else
+			printf "%s\n" "${available_tags[@]}" > ${out_path}
+			echo "Tag list saved to: ${out_path}"
+		fi
+	else
+		readarray -t available_tags < "${out_path}"
+        echo "Loaded ${#available_tags[@]} unique tags from file"
+	fi
+
+	# ask user
+	echo
+	echo -e "${CYAN}Enter tags${CLEAR}"
+	echo -e "${GREY}Separator: comma${CLEAR}"
+	echo -e "${GREY}Partial match is supported${CLEAR}"
+	echo -e "${GREY}Leave empty to list available hosts${CLEAR}"
+	read -p ">> " tags_query
+
+	if [[ -z "${tags_query}" ]]; then
+		# empty query
+		# show full list
+		select tag in "${available_tags[@]}"; do
+			if [ -n "${tag}" ]; then
+				ANSIBLE_TAGS="${tag}"
+				echo "-> ${tag}"
+				break
+			else
+				echo -e "${MAGENTA}Invalid choice – try again.${CLEAR}"
+				continue
+			fi
+		done
+	else
+		# query
+		tags_query=${tags_query,,} # make lowercase
+
+		# find matches
+		local matches=()
+		for tag in "${available_tags[@]}"; do
+			tag=${tag,,} # lowercase
+			if [[ ${tag} == *"${tags_query}"* ]]; then
+				matches+=("${tag}")
+			fi
+		done
+
+		if [[ ${#matches[@]} -eq 0 ]]; then
+			# no match
+			echo -e "${MAGENTA}Could not find any matches. Please try again.${CLEAR}"
+			# repeat
+			set_tags
+		elif [[ ${#matches[@]} -eq 1 ]]; then
+			# one match
+			ANSIBLE_TAGS="${matches[0]}"
+			echo "-> ${ANSIBLE_TAGS}"
+		else
+			# more matches
+			select choice in "${matches[@]}"; do
+				if [[ -z ${choice} ]]; then
+					echo -e "${MAGENTA}Invalid choice – try again.${CLEAR}"
+					continue
+				else
+					ANSIBLE_TAGS="${choice}"
+					echo "-> ${ANSIBLE_TAGS}"
+					break
+				fi
+			done
+		fi
+	fi
+
+	if [[ -n ${ANSIBLE_TAGS} ]]; then
+		return 0
+	else
+		echo "ERROR: ANSIBLE_TAGS not set!"
+		return 1
+	fi
+}
+
+function set_host {
+	# requires: 
+	# - ANSIBLE_INVENTORY_PATH
+	# sets:
+	# - ANSIBLE_HOST
+
+	local host_query
+	local available_hosts
+
+	while IFS= read -r line; do
+		# remove leading whitespace characters
+		line="${line#"${line%%[![:space:]]*}"}"
+		# remove trailing whitespace characters
+		line="${line%"${line##*[![:space:]]}"}"
+		if [[ ${line} != hosts* && -n ${line} ]]; then
+			available_hosts+=("${line}")
+		fi
+	done < <(ansible all --inventory=${ANSIBLE_INVENTORY_PATH} --list-hosts)
+
+	if [[ ${#available_hosts[@]} -eq 0 ]]; then
+		echo "ERROR: Could not find any hosts in inventory file: ${ANSIBLE_INVENTORY_PATH}"
+		exit 1
+	fi
+
+	# ask user
+	echo -e "${CYAN}Enter host name${CLEAR}"
+	echo -e "${GREY}Partial match is supported${CLEAR}"
+	echo -e "${GREY}Leave empty to list available hosts${CLEAR}"
+	read -p ">> " host_query
+	shopt -s nocasematch # make [[ string == pattern ]] case‑insensitive
+
+	if [[ -z ${host_query} ]]; then
+		# empty query
+		select choice in "${available_hosts[@]}"; do
+			if [[ -z ${choice} ]]; then
+				echo -e "${MAGENTA}Invalid choice – try again.${CLEAR}"
+				continue
+			else
+				ANSIBLE_HOST="${choice}"
+				echo "-> ${ANSIBLE_HOST}"
+				break
+			fi
+		done
+	else
+		# query
+		host_query=${host_query,,} # make lowercase
+
+		# find matches
+		local matches=()
+		for host in "${available_hosts[@]}"; do
+			host=${host,,} # lowercase
+			if [[ ${host} == *"${host_query}"* ]]; then
+				matches+=("${host}")
+			fi
+		done
+
+		if [[ ${#matches[@]} -eq 0 ]]; then
+			# no match
+			echo -e "${MAGENTA}Could not find any matches. Please try again.${CLEAR}"
+			# repeat
+			set_host
+		elif [[ ${#matches[@]} -eq 1 ]]; then
+			# one match
+			ANSIBLE_HOST="${matches[0]}"
+			echo "-> ${ANSIBLE_HOST}"
+		else
+			# more matches
+			select choice in "${matches[@]}"; do
+				if [[ -z ${choice} ]]; then
+					echo -e "${MAGENTA}Invalid choice – try again.${CLEAR}"
+					continue
+				else
+					ANSIBLE_HOST="${choice}"
+					echo "-> ${ANSIBLE_HOST}"
+					break
+				fi
+			done
+		fi
+	fi
+
+	if [[ -n ${ANSIBLE_HOST} ]]; then
+		return 0
+	else
+		echo "ERROR: ANSIBLE_HOST not set!"
+		return 1
+	fi
+}
+
+function main { # ${host} ${tags}
 
 	ANSIBLE_HOST=${1:-""}
 	ANSIBLE_TAGS=${2:-""}
@@ -46,35 +255,29 @@ function main() { # ${host} ${tags}
 		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
 			ansible_exec_path="/home/${USER}/.local/bin/ansible-playbook"
 		else 
-			return 1
+			exit 1
 		fi
 	fi
 	
+	# check repo path
 	if [[ ! -d "${ANSIBLE_REPO_PATH}" ]]; then
 		echo "ANSIBLE_REPO_PATH not found: ${ANSIBLE_REPO_PATH}"
 		echo "Adjust config file at: ${PATH_CONFIG}. Exiting ..."
-		return 1
+		exit 1
 	fi
 
+	# build inventory path
+	if [[ -f "${ANSIBLE_REPO_PATH}/inventory/inventory.yml" ]]; then
+		ANSIBLE_INVENTORY_PATH="${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
+	else
+		echo "ERROR: Path to inventory not found. Tried:"
+		echo "${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
+		exit 1
+	fi
+
+	# set host
 	if [[ -z "${ANSIBLE_HOST}" ]]; then
-		echo
-		echo -e "${CYAN}Enter host name${CLEAR}"
-		if [[ ${#HOSTS[@]} -gt 0 ]]; then
-			echo -e "${GREY}Leave empty for suggestions${CLEAR}"
-		fi
-		read -p ">> " ANSIBLE_HOST
-		if [[ -z "${ANSIBLE_HOST}" ]]; then
-			select item in "${HOSTS[@]}"; do
-				if [ -n "${item}" ]; then
-					# remove " [user]" from the host string
-					ANSIBLE_HOST="${item%% \[*}" # remove " [*" from the end
-					echo "-> ${ANSIBLE_HOST}"
-					break
-				else
-					echo "Invalid selection. Try again."
-				fi
-			done
-		fi
+		set_host
 	fi
 
 	# build playbook path
@@ -90,42 +293,9 @@ function main() { # ${host} ${tags}
 		read -p ">> " ANSIBLE_PLAYBOOK_PATH
 	fi
 
-	# build inventory path
-	if [[ -f "${ANSIBLE_REPO_PATH}/inventory/inventory.yml" ]]; then
-		ANSIBLE_INVENTORY_PATH="${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
-	else
-		echo "ERROR: Path to inventory not found. Tried:"
-		echo "${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
-		return 1
-	fi
-
+	# set tags
 	if [[ -z "${ANSIBLE_TAGS}" ]]; then
-		echo
-		echo -e "${CYAN}Enter tags${CLEAR}"
-		echo -e "${GREY}Separator: comma${CLEAR}"
-		echo -e "${GREY}Leave empty for suggestions${CLEAR}"
-		read -p ">> " ANSIBLE_TAGS
-		if [[ -z "${ANSIBLE_TAGS}" ]]; then
-			# Extracting TASK TAGS line
-			local output_list_tags=$(ansible-playbook --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
-			#task_tags_line=$(echo "${output_list_tags}" | grep "TASK TAGS:")
-			# Removing the prefix and brackets
-			task_tags_line="${output_list_tags#*TASK TAGS: }" # Remove from the beginning until TASK TAGS: 
-			task_tags_line="${task_tags_line//[\[\]]/}" # Remove brackets
-			# Converting the string into an array using IFS
-			local tags_array=()
-			IFS=', ' read -r -a tags_array <<< "${task_tags_line}"
-
-			select tag in "${tags_array[@]}"; do
-				if [ -n "${tag}" ]; then
-					echo "-> ${tag}"
-					ANSIBLE_TAGS="${tag}"
-					break
-				else
-					echo "Invalid selection. Try again."
-				fi
-			done			
-		fi
+		set_tags
 	fi
 
 	# how shall ansible prompt for vault with id corresponding to host
