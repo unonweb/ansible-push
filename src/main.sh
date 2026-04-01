@@ -37,14 +37,27 @@ function main() { # ${host} ${tags}
 
 	local vault_host_creds
 	local vault_all_creds
+
+	local ansible_exec_path=$(which ansible-playbook)
+
+	if [[ -z "${ansible_exec_path}" ]]; then
+		echo "ansible-playbook not found in PATH"
+		echo -e "Trying ${GREY}/home/${USER}/.local/bin/ansible-playbook${CLEAR} ..."
+		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
+			ansible_exec_path="/home/${USER}/.local/bin/ansible-playbook"
+		else 
+			return 1
+		fi
+	fi
 	
 	if [[ ! -d "${ANSIBLE_REPO_PATH}" ]]; then
 		echo "ANSIBLE_REPO_PATH not found: ${ANSIBLE_REPO_PATH}"
 		echo "Adjust config file at: ${PATH_CONFIG}. Exiting ..."
-		exit 1
+		return 1
 	fi
 
 	if [[ -z "${host}" ]]; then
+		echo
 		echo -e "${CYAN}Enter host name${CLEAR}"
 		if [[ ${#HOSTS[@]} -gt 0 ]]; then
 			echo -e "${GREY}Leave empty for suggestions${CLEAR}"
@@ -83,7 +96,7 @@ function main() { # ${host} ${tags}
 	else
 		echo "ERROR: Path to inventory not found. Tried:"
 		echo "${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
-		exit 1
+		return 1
 	fi
 
 	if [[ -z "${tags}" ]]; then
@@ -136,7 +149,7 @@ function main() { # ${host} ${tags}
 	fi
 
 	# build cmd
-	local CMD="ansible-playbook"
+	local CMD="${ansible_exec_path}"
 	CMD+=" --inventory=${ansible_inventory_path}"
 	CMD+=" --tags "${tags}""
 	if ((USE_VAULT_ALL)); then
