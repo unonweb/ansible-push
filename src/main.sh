@@ -168,14 +168,7 @@ function main() { # ${host} ${tags}
 	echo -en "${CLEAR}"
 	
 	# run cmd
-	ANSIBLE_HASH_BEHAVIOUR=merge ${CMD}
-
-	#ANSIBLE_HASH_BEHAVIOUR=merge ansible-playbook \
-	#--vault-id=all@${VAULT_ALL_CREDS_LOOKUP_PATH} \
-	#--vault-id=${host}@${vault_host_creds} \
-	#--inventory=${ANSIBLE_REPO_PATH}/inventory/inventory.yml \
-	#--tags "${tags}" \
-	#${ANSIBLE_REPO_PATH}/playbooks/${host}.yml
+	${CMD}
 }
 
 main "${1:-""}" "${2:-""}"
