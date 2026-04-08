@@ -249,6 +249,7 @@ function main { # ${host} ${tags}
 
 	local ansible_exec_path=$(which ansible-playbook)
 
+	# check ansible binary
 	if [[ -z "${ansible_exec_path}" ]]; then
 		echo "ansible-playbook not found in PATH"
 		echo -e "Trying ${GREY}/home/${USER}/.local/bin/ansible-playbook${CLEAR} ..."
@@ -257,6 +258,11 @@ function main { # ${host} ${tags}
 		else 
 			exit 1
 		fi
+	fi
+
+	# mkdir data
+	if [[ ! -d "${PATH_DATA}" ]]; then
+		mkdir "${PATH_DATA}"
 	fi
 	
 	# check repo path
