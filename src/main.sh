@@ -150,9 +150,17 @@ function set_tags {
 			# repeat
 			set_tags
 		else
-			joined=$(printf '%s,' "${matches[@]}")
-			joined=${joined%,}   # strip the trailing comma
-			ANSIBLE_TAGS="${joined}"
+			echo -e "${CYAN}Confirm the following tags:${CLEAR} ${GREY}${matches[@]}${CLEAR} (Enter)"
+			read -p ">> " confirm
+			if [[ -z ${confirm} ]]; then
+				joined=$(printf '%s,' "${matches[@]}")
+				joined=${joined%,}   # strip the trailing comma
+				ANSIBLE_TAGS="${joined}"
+			else
+				echo -e "Restart."
+				# repeat
+				set_tags
+			fi
 		fi
 	fi
 
