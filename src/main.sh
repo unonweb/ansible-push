@@ -50,8 +50,8 @@ function set_tags {
     if [[ -f "${out_path}" ]]; then
 		echo
 		echo "Tag list found: ${out_path}"
-		echo -e "${CYAN}Use it?${CLEAR} (Enter)"
-		echo -e "${CYAN}Recreate it?${CLEAR} (r)"
+		echo -e "${CYAN}Use this tag list?${CLEAR} (Enter)"
+		echo -e "${CYAN}Refresh tag list?${CLEAR} (r)"
         read -p ">> " choice
         case "${choice}" in
             r)
@@ -61,6 +61,7 @@ function set_tags {
         esac
     fi
 
+	# run_tag_extraction
 	if [[ "${run_tag_extraction}" == true ]]; then
 		# get available tags
 		echo
@@ -93,8 +94,8 @@ function set_tags {
 	echo -e "${GREY}Leave empty to list available hosts${CLEAR}"
 	read -p ">> " tags_query
 
+	# user inputs nothing
 	if [[ -z "${tags_query}" ]]; then
-		# empty query
 		# show full list
 		select tag in "${available_tags[@]}"; do
 			if [ -n "${tag}" ]; then
@@ -109,13 +110,37 @@ function set_tags {
 	else
 		# query
 		tags_query=${tags_query,,} # make lowercase
-
-		# find matches
+		# Convert the comma-separated string into an array
+		local tags_query_array=()
 		local matches=()
-		for tag in "${available_tags[@]}"; do
-			tag=${tag,,} # lowercase
-			if [[ ${tag} == *"${tags_query}"* ]]; then
-				matches+=("${tag}")
+		local no_matches=()
+		IFS=',' read -ra tags_query_array <<< "${tags_query}"
+
+		# Iterate through each tag in the query
+		# find matches
+		for query_tag in "${tags_query_array[@]}"; do
+			local this_query_matches=()
+			for tag in "${available_tags[@]}"; do
+				tag=${tag,,} # lowercase
+				if [[ ${tag} == *"${query_tag}"* ]]; then
+					this_query_matches+=("${tag}")
+				fi
+			done
+			if [[ ${#this_query_matches[@]} -eq 1 ]]; then
+				matches+=("${this_query_matches[0]}")
+				echo "-> ${this_query_matches[0]}"
+			else
+				echo -e "${CYAN}Multiple matches found for ${query_tag}. Select:${CLEAR}"
+				select choice in "${this_query_matches[@]}"; do
+					if [[ -z ${choice} ]]; then
+						echo -e "${MAGENTA}Invalid choice – try again.${CLEAR}"
+						continue
+					else
+						matches+=("${choice}")
+						echo "-> ${choice}"
+						break
+					fi
+				done
 			fi
 		done
 
@@ -124,22 +149,10 @@ function set_tags {
 			echo -e "${MAGENTA}Could not find any matches. Please try again.${CLEAR}"
 			# repeat
 			set_tags
-		elif [[ ${#matches[@]} -eq 1 ]]; then
-			# one match
-			ANSIBLE_TAGS="${matches[0]}"
-			echo "-> ${ANSIBLE_TAGS}"
 		else
-			# more matches
-			select choice in "${matches[@]}"; do
-				if [[ -z ${choice} ]]; then
-					echo -e "${MAGENTA}Invalid choice – try again.${CLEAR}"
-					continue
-				else
-					ANSIBLE_TAGS="${choice}"
-					echo "-> ${ANSIBLE_TAGS}"
-					break
-				fi
-			done
+			joined=$(printf '%s,' "${matches[@]}")
+			joined=${joined%,}   # strip the trailing comma
+			ANSIBLE_TAGS="${joined}"
 		fi
 	fi
 
