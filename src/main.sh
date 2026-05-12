@@ -150,7 +150,7 @@ function set_tags {
 			# repeat
 			set_tags
 		else
-			echo -e "${CYAN}Confirm the following tags:${CLEAR} ${GREY}${matches[@]}${CLEAR} (Enter)"
+			echo -e "${CYAN}Use the following tags?${CLEAR} ${GREY}${matches[@]}${CLEAR} (enter | any)"
 			read -p ">> " confirm
 			if [[ -z ${confirm} ]]; then
 				joined=$(printf '%s,' "${matches[@]}")
