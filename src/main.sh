@@ -67,7 +67,7 @@ function set_tags {
 		echo
 		echo -e "${BLINKINK}Searching for tags associated with playbook ...${CLEAR}"
 		# Extracting TASK TAGS line
-		local output_list_tags=$(ansible-playbook --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
+		local output_list_tags=$(${ANSIBLE_PLAYBOOK_EXEC} --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
 		# Removing the prefix and brackets
 		task_tags_line="${output_list_tags#*TASK TAGS: }" # Remove from the beginning until TASK TAGS: 
 		task_tags_line="${task_tags_line//[\[\]]/}" # Remove brackets
@@ -189,7 +189,7 @@ function set_host {
 		if [[ ${line} != hosts* && -n ${line} ]]; then
 			available_hosts+=("${line}")
 		fi
-	done < <(ansible all --inventory=${ANSIBLE_INVENTORY_PATH} --list-hosts)
+	done < <(${ANSIBLE_EXEC} all --inventory=${ANSIBLE_INVENTORY_PATH} --list-hosts)
 
 	if [[ ${#available_hosts[@]} -eq 0 ]]; then
 		echo "ERROR: Could not find any hosts in inventory file: ${ANSIBLE_INVENTORY_PATH}"
@@ -264,18 +264,28 @@ function main { # ${host} ${tags}
 
 	ANSIBLE_HOST=${1:-""}
 	ANSIBLE_TAGS=${2:-""}
+	ANSIBLE_PLAYBOOK_EXEC=$(which ansible-playbook)
+	ANSIBLE_EXEC=$(which ansible)
 
 	local vault_host_creds
 	local vault_all_creds
 
-	local ansible_exec_path=$(which ansible-playbook)
-
-	# check ansible binary
-	if [[ -z "${ansible_exec_path}" ]]; then
+	# check executable paths
+	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC}" ]]; then
 		echo "ansible-playbook not found in PATH"
 		echo -e "Trying ${GREY}/home/${USER}/.local/bin/ansible-playbook${CLEAR} ..."
 		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
-			ansible_exec_path="/home/${USER}/.local/bin/ansible-playbook"
+			ANSIBLE_PLAYBOOK_EXEC="/home/${USER}/.local/bin/ansible-playbook"
+		else 
+			exit 1
+		fi
+	fi
+
+	if [[ -z "${ANSIBLE_EXEC}" ]]; then
+		echo "ansible not found in PATH"
+		echo -e "Trying ${GREY}/home/${USER}/.local/bin/ansible${CLEAR} ..."
+		if [[ -f "/home/${USER}/.local/bin/ansible" ]]; then
+			ANSIBLE_EXEC="/home/${USER}/.local/bin/ansible"
 		else 
 			exit 1
 		fi
@@ -346,7 +356,7 @@ function main { # ${host} ${tags}
 	fi
 
 	# build cmd
-	local CMD="${ansible_exec_path}"
+	local CMD="${ANSIBLE_PLAYBOOK_EXEC}"
 	CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
 	CMD+=" --tags "${ANSIBLE_TAGS}""
 	if ((USE_VAULT_ALL)); then
