@@ -197,6 +197,7 @@ function set_host {
 	fi
 
 	# ask user
+	echo
 	echo -e "${CYAN}Enter host name${CLEAR}"
 	echo -e "${GREY}Partial match is supported${CLEAR}"
 	echo -e "${GREY}Leave empty to list available hosts${CLEAR}"
@@ -270,20 +271,25 @@ function main { # ${host} ${tags}
 	local vault_host_creds
 	local vault_all_creds
 
-	# check executable paths
+	# check exec path
 	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC}" ]]; then
+		echo -ne "${GREY}"
 		echo "ansible-playbook not found in PATH"
-		echo -e "Trying ${GREY}/home/${USER}/.local/bin/ansible-playbook${CLEAR} ..."
+		echo -e "Trying /home/${USER}/.local/bin/ansible-playbook ..."
+		echo -ne "${CLEAR}"
 		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
 			ANSIBLE_PLAYBOOK_EXEC="/home/${USER}/.local/bin/ansible-playbook"
 		else 
 			exit 1
 		fi
 	fi
-
+	
+	# check exec path
 	if [[ -z "${ANSIBLE_EXEC}" ]]; then
+		echo -ne "${GREY}"
 		echo "ansible not found in PATH"
-		echo -e "Trying ${GREY}/home/${USER}/.local/bin/ansible${CLEAR} ..."
+		echo -e "Trying /home/${USER}/.local/bin/ansible ..."
+		echo -ne "${CLEAR}"
 		if [[ -f "/home/${USER}/.local/bin/ansible" ]]; then
 			ANSIBLE_EXEC="/home/${USER}/.local/bin/ansible"
 		else 
