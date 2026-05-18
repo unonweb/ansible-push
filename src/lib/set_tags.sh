@@ -34,7 +34,7 @@ function set_tags {
 		echo
 		echo -e "${BLINKINK}Searching for tags associated with playbook ...${CLEAR}"
 		# Extracting TASK TAGS line
-		local output_list_tags=$(ansible-playbook --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
+		local output_list_tags=$(${ANSIBLE_PLAYBOOK_EXEC} --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
 		# Removing the prefix and brackets
 		task_tags_line="${output_list_tags#*TASK TAGS: }" # Remove from the beginning until TASK TAGS: 
 		task_tags_line="${task_tags_line//[\[\]]/}" # Remove brackets
@@ -117,7 +117,7 @@ function set_tags {
 			# repeat
 			set_tags
 		else
-			echo -e "${CYAN}Confirm the following tags:${CLEAR} ${GREY}${matches[@]}${CLEAR} (Enter)"
+			echo -e "${CYAN}Use the following tags?${CLEAR} ${GREY}${matches[@]}${CLEAR} (enter | any)"
 			read -p ">> " confirm
 			if [[ -z ${confirm} ]]; then
 				joined=$(printf '%s,' "${matches[@]}")

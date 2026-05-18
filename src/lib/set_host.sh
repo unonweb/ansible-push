@@ -15,7 +15,7 @@ function set_host {
 		if [[ ${line} != hosts* && -n ${line} ]]; then
 			available_hosts+=("${line}")
 		fi
-	done < <(ansible all --inventory=${ANSIBLE_INVENTORY_PATH} --list-hosts)
+	done < <(${ANSIBLE_EXEC} all --inventory=${ANSIBLE_INVENTORY_PATH} --list-hosts)
 
 	if [[ ${#available_hosts[@]} -eq 0 ]]; then
 		echo "ERROR: Could not find any hosts in inventory file: ${ANSIBLE_INVENTORY_PATH}"
@@ -23,6 +23,7 @@ function set_host {
 	fi
 
 	# ask user
+	echo
 	echo -e "${CYAN}Enter host name${CLEAR}"
 	echo -e "${GREY}Partial match is supported${CLEAR}"
 	echo -e "${GREY}Leave empty to list available hosts${CLEAR}"
