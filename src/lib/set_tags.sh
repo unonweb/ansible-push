@@ -75,6 +75,11 @@ function set_tags {
 			fi
 		done
 	else
+		if [[ "${tags_query}" == "all" ]]; then
+			ANSIBLE_TAGS="all"
+			return 0
+		fi
+		
 		# query
 		tags_query=${tags_query,,} # make lowercase
 		# Convert the comma-separated string into an array
