@@ -150,7 +150,7 @@ function main { # ${host} ${tags}
 
 	# feedback
 	echo
-	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags: "${ANSIBLE_TAGS}"${CLEAR} ..."
+	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
 	echo -en "${GREY}"
 	echo ${CMD}
 	echo -en "${CLEAR}"

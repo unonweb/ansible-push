@@ -124,7 +124,7 @@ function set_tags {
 			set_tags
 		else
 			echo
-			echo -e "${CYAN}Use the following tags?${CLEAR} ${GREY}${matches[@]}${CLEAR} (enter | any)"
+			echo -e "${CYAN}Use the following tags?${CLEAR} ${BOLD}${matches[@]}${CLEAR} (enter | any)"
 			read -p ">> " confirm
 			if [[ -z ${confirm} ]]; then
 				joined=$(printf '%s,' "${matches[@]}")
