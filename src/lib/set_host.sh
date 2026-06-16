@@ -1,6 +1,7 @@
 function set_host {
 	# requires: 
 	# - ANSIBLE_INVENTORY_PATH
+	# - ANSIBLE_EXEC_PATH
 	# sets:
 	# - ANSIBLE_HOST
 
@@ -15,7 +16,7 @@ function set_host {
 		if [[ ${line} != hosts* && -n ${line} ]]; then
 			available_hosts+=("${line}")
 		fi
-	done < <(${ANSIBLE_EXEC} all --inventory=${ANSIBLE_INVENTORY_PATH} --list-hosts)
+	done < <(${ANSIBLE_EXEC_PATH} all --inventory=${ANSIBLE_INVENTORY_PATH} --list-hosts)
 
 	if [[ ${#available_hosts[@]} -eq 0 ]]; then
 		echo "ERROR: Could not find any hosts in inventory file: ${ANSIBLE_INVENTORY_PATH}"
