@@ -103,6 +103,7 @@ function set_tags {
 				matches+=("${this_query_matches[0]}")
 				echo "-> ${this_query_matches[0]}"
 			else
+				echo
 				echo -e "${CYAN}Multiple matches found for ${query_tag}. Select:${CLEAR}"
 				select choice in "${this_query_matches[@]}"; do
 					if [[ -z ${choice} ]]; then
@@ -123,7 +124,8 @@ function set_tags {
 			# repeat
 			set_tags
 		else
-			echo -e "${CYAN}Use the following tags?${CLEAR} ${GREY}${matches[@]}${CLEAR} (enter | any)"
+			echo
+			echo -e "${CYAN}Use the following tags?${CLEAR} ${BOLD}${matches[@]}${CLEAR} (enter | any)"
 			read -p ">> " confirm
 			if [[ -z ${confirm} ]]; then
 				joined=$(printf '%s,' "${matches[@]}")
