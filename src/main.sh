@@ -42,6 +42,7 @@ function main { # ${host} ${tags}
 	ANSIBLE_TAGS=${2:-""}
 	ANSIBLE_PLAYBOOK_EXEC=$(which ansible-playbook)
 	ANSIBLE_EXEC=$(which ansible)
+	local ansible_config_path="${ANSIBLE_REPO_PATH}/ansible.cfg"
 
 	local vault_host_creds
 	local vault_all_creds
@@ -148,15 +149,22 @@ function main { # ${host} ${tags}
 	fi
 	CMD+=" ${ANSIBLE_PLAYBOOK_PATH}"
 
+	# build env
+	if [[ -f "${ansible_config_path}" ]]; then
+        CMD="ANSIBLE_CONFIG='${ANSIBLE_REPO_PATH}/ansible.cfg' ${CMD}"
+	else
+		echo "Ansible config not found at ${ansible_config_path}"
+	fi
+
 	# feedback
 	echo
 	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags: "${ANSIBLE_TAGS}"${CLEAR} ..."
 	echo -en "${GREY}"
-	echo ${CMD}
+	echo "${CMD}"
 	echo -en "${CLEAR}"
 	
 	# run cmd
-	${CMD}
+	eval "${CMD}"
 }
 
 main "${1:-""}" "${2:-""}"
