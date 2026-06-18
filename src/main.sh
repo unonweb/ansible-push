@@ -142,9 +142,8 @@ function main { # ${host} ${tags}
 	local group_vars_dirs
 	local has_group_vault=0
 	mapfile -t group_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "group_vars")
-	if [[ ${#group_vars_dirs[@]} -eq 1 ]]; then
+	if [[ ${#group_vars_dirs[@]} -eq 1 && -n ${VAULT_GROUP_NAME} ]]; then
 		local vault_group_path="${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml"
-		echo $vault_group_path
 		if [[ -f "${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml" ]]; then
 			has_group_vault=1
 		fi
