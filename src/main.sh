@@ -41,33 +41,34 @@ function main { # ${host} ${tags}
 
 	ANSIBLE_HOST=${1:-""}
 	ANSIBLE_TAGS=${2:-""}
-	ANSIBLE_PLAYBOOK_EXEC=$(which ansible-playbook)
-	ANSIBLE_EXEC=$(which ansible)
-
+	ANSIBLE_EXEC_PATH=$(which ansible)
+	ANSIBLE_PLAYBOOK_EXEC_PATH=$(which ansible-playbook)
+	
+	local ansible_config_path="${ANSIBLE_REPO_PATH}/ansible.cfg"
 	local vault_host_creds
 	local vault_all_creds
 
 	# check exec path
-	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC}" ]]; then
+	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC_PATH}" ]]; then
 		echo -ne "${GREY}"
 		echo "ansible-playbook not found in PATH"
 		echo -e "Trying /home/${USER}/.local/bin/ansible-playbook ..."
 		echo -ne "${CLEAR}"
 		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
-			ANSIBLE_PLAYBOOK_EXEC="/home/${USER}/.local/bin/ansible-playbook"
+			ANSIBLE_PLAYBOOK_EXEC_PATH="/home/${USER}/.local/bin/ansible-playbook"
 		else 
 			exit 1
 		fi
 	fi
 	
 	# check exec path
-	if [[ -z "${ANSIBLE_EXEC}" ]]; then
+	if [[ -z "${ANSIBLE_EXEC_PATH}" ]]; then
 		echo -ne "${GREY}"
 		echo "ansible not found in PATH"
 		echo -e "Trying /home/${USER}/.local/bin/ansible ..."
 		echo -ne "${CLEAR}"
 		if [[ -f "/home/${USER}/.local/bin/ansible" ]]; then
-			ANSIBLE_EXEC="/home/${USER}/.local/bin/ansible"
+			ANSIBLE_EXEC_PATH="/home/${USER}/.local/bin/ansible"
 		else 
 			exit 1
 		fi
@@ -128,7 +129,7 @@ function main { # ${host} ${tags}
 	fi
 
 	# build cmd
-	local CMD="${ANSIBLE_PLAYBOOK_EXEC}"
+	local CMD="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
 	CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
 	CMD+=" --tags "${ANSIBLE_TAGS}""
 	if ((USE_VAULT_ALL)); then
@@ -139,15 +140,22 @@ function main { # ${host} ${tags}
 	fi
 	CMD+=" ${ANSIBLE_PLAYBOOK_PATH}"
 
+	# build env
+	if [[ -f "${ansible_config_path}" ]]; then
+        CMD="ANSIBLE_CONFIG='${ANSIBLE_REPO_PATH}/ansible.cfg' ${CMD}"
+	else
+		echo "Ansible config not found at ${ansible_config_path}"
+	fi
+
 	# feedback
 	echo
 	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
 	echo -en "${GREY}"
-	echo ${CMD}
+	echo "${CMD}"
 	echo -en "${CLEAR}"
 	
 	# run cmd
-	${CMD}
+	eval "${CMD}"
 }
 
 main "${1:-""}" "${2:-""}"
