@@ -166,7 +166,7 @@ function main { # ${host} ${tags}
 	CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
 	CMD+=" --tags "${ANSIBLE_TAGS}""
 	if ((has_group_vault)); then
-		CMD+=" --vault-id=all@${vault_all_creds}"
+		CMD+=" --vault-id=${VAULT_GROUP_NAME}@${vault_all_creds}"
 	fi
 	if ((has_host_vault)); then
 		CMD+=" --vault-id=${ANSIBLE_HOST}@${vault_host_creds}"
