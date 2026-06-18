@@ -22,8 +22,6 @@ BLINKINK="\033[5m"
 PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 PATH_DATA="${SCRIPT_PARENT}/data"
-USE_VAULT_ALL=1
-USE_VAULT_HOST=1
 VERSION=1.12
 
 if [[ -r ${PATH_CONFIG} ]]; then
@@ -110,34 +108,67 @@ function main { # ${host} ${tags}
 		set_tags
 	fi
 
-	# how shall ansible prompt for vault with id corresponding to host
-	if [[ "${ANSIBLE_HOST}" = "$(hostname)" ]]; then
-		if [[ -x "${VAULT_HOST_CREDS_LOOKUP_PATH}" ]]; then
-			vault_host_creds="${VAULT_HOST_CREDS_LOOKUP_PATH}"
-		else
-			echo
-			echo "In order to avoid asking for your own vault key everytime place a lookup script at ${VAULT_HOST_CREDS_LOOKUP_PATH} and make it executable."
-			vault_host_creds="prompt"
+	# SET has_host_vault
+	local host_vars_dirs
+	local has_host_vault=0
+	mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "host_vars")
+	if [[ ${#host_vars_dirs[@]} -eq 1 ]]; then
+		local vault_host_path="${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml"
+		echo ${vault_host_path}
+		if [[ -f "${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml" ]]; then
+			has_host_vault=1
 		fi
 	else
-		vault_host_creds="prompt"
+		echo "No 'host_vars' directory found at ${ANSIBLE_REPO_PATH}"
 	fi
-	
-	# how shall ansible prompt for vault with id 'all'
-	if [[ -f "${VAULT_ALL_CREDS_LOOKUP_PATH}" ]]; then
-		vault_all_creds="${VAULT_ALL_CREDS_LOOKUP_PATH}"
+
+	# SET vault_host_creds
+	if ((has_host_vault)); then
+		if [[ "${ANSIBLE_HOST}" == "$(hostname)" ]]; then
+			# we'are running ansible against localhost
+			if [[ -x "${VAULT_HOST_CREDS_LOOKUP_PATH}" ]]; then
+				vault_host_creds="${VAULT_HOST_CREDS_LOOKUP_PATH}"
+			else
+				echo
+				echo "In order to avoid asking for your own vault key everytime place a lookup script at ${VAULT_HOST_CREDS_LOOKUP_PATH} and make it executable."
+				vault_host_creds="prompt"
+			fi
+		else
+			vault_host_creds="prompt"
+		fi
+	fi
+
+	# SET has_group_vault
+	local group_vars_dirs
+	local has_group_vault=0
+	mapfile -t group_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "group_vars")
+	if [[ ${#group_vars_dirs[@]} -eq 1 ]]; then
+		local vault_group_path="${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml"
+		echo $vault_group_path
+		if [[ -f "${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml" ]]; then
+			has_group_vault=1
+		fi
 	else
-		vault_all_creds="prompt"
+		echo "No 'group_vars' directory found at ${ANSIBLE_REPO_PATH}"
+	fi
+
+	# SET vault_all_creds
+	if ((has_group_vault)); then
+		if [[ -f "${VAULT_GROUP_CREDS_LOOKUP_PATH}" ]]; then
+			vault_all_creds="${VAULT_GROUP_CREDS_LOOKUP_PATH}"
+		else
+			vault_all_creds="prompt"
+		fi
 	fi
 
 	# SET cmd
 	local CMD="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
 	CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
 	CMD+=" --tags "${ANSIBLE_TAGS}""
-	if ((USE_VAULT_ALL)); then
+	if ((has_group_vault)); then
 		CMD+=" --vault-id=all@${vault_all_creds}"
 	fi
-	if ((USE_VAULT_HOST)); then
+	if ((has_host_vault)); then
 		CMD+=" --vault-id=${ANSIBLE_HOST}@${vault_host_creds}"
 	fi
 	CMD+=" ${ANSIBLE_PLAYBOOK_PATH}"
