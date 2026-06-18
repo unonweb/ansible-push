@@ -24,6 +24,7 @@ PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 PATH_DATA="${SCRIPT_PARENT}/data"
 USE_VAULT_ALL=1
 USE_VAULT_HOST=1
+VERSION=1.1
 
 if [[ -r ${PATH_CONFIG} ]]; then
 	source "${PATH_CONFIG}"
@@ -48,15 +49,18 @@ function main { # ${host} ${tags}
 	local vault_host_creds
 	local vault_all_creds
 
+	# print version
+	echo -ne "${GREY}"
+	echo -e "Version: ${VERSION}"
+	echo -ne "${CLEAR}"
+
 	# check exec path
 	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC_PATH}" ]]; then
-		echo -ne "${GREY}"
-		echo "ansible-playbook not found in PATH"
-		echo -e "Trying /home/${USER}/.local/bin/ansible-playbook ..."
-		echo -ne "${CLEAR}"
 		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
 			ANSIBLE_PLAYBOOK_EXEC_PATH="/home/${USER}/.local/bin/ansible-playbook"
-		else 
+		else
+			echo "ansible-playbook executable not found. Tried:"
+			echo "/home/${USER}/.local/bin/ansible-playbook"
 			exit 1
 		fi
 	fi
