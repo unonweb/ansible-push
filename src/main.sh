@@ -154,6 +154,7 @@ function main { # ${host} ${tags}
 	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
 	echo -en "${GREY}"
 	echo "${CMD}"
+	echo
 	echo -en "${CLEAR}"
 	
 	# run cmd
