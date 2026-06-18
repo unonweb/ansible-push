@@ -196,18 +196,20 @@ function main { # ${host} ${tags}
 		
 		# RUN cmd
 		eval "${CMD}"
-		exit_code=${?}
-		if [[ ${exit_code} -ne 0 ]]; then
+		
+		if [[ ${?} -ne 0 ]]; then
 			echo -e "${MAGENTA}Script returned error code: ${exit_code}${RESET}"
 			echo
-			echo "${CYAN}Start from beginning or run the same command again?${RESET} (enter | r)"
-			read -p ">> "
-			if [[ "${REPLY}" == "r" ]]; then
-				eval "${CMD}"
-			else
-				continue
-			fi
 		fi
+
+		echo "${CYAN}Start from beginning or run the same command again?${RESET} (enter | r)"
+		read -p ">> "
+		if [[ "${REPLY}" == "r" ]]; then
+			eval "${CMD}"
+		else
+			continue
+		fi
+
 	done
 }
 
