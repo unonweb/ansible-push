@@ -24,7 +24,7 @@ PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 PATH_DATA="${SCRIPT_PARENT}/data"
 USE_VAULT_ALL=1
 USE_VAULT_HOST=1
-VERSION=1.11
+VERSION=1.12
 
 if [[ -r ${PATH_CONFIG} ]]; then
 	source "${PATH_CONFIG}"
@@ -49,12 +49,12 @@ function main { # ${host} ${tags}
 	local vault_host_creds
 	local vault_all_creds
 
-	# print version
+	# PRINT version
 	echo -ne "${GREY}"
 	echo -e "Version: ${VERSION}"
 	echo -ne "${CLEAR}"
 
-	# check exec path
+	# CHECK exec path
 	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC_PATH}" ]]; then
 		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
 			ANSIBLE_PLAYBOOK_EXEC_PATH="/home/${USER}/.local/bin/ansible-playbook"
@@ -65,7 +65,7 @@ function main { # ${host} ${tags}
 		fi
 	fi
 	
-	# check exec path
+	# CHECK exec path
 	if [[ -z "${ANSIBLE_EXEC_PATH}" ]]; then
 		if [[ -f "/home/${USER}/.local/bin/ansible" ]]; then
 			ANSIBLE_EXEC_PATH="/home/${USER}/.local/bin/ansible"
@@ -76,19 +76,19 @@ function main { # ${host} ${tags}
 		fi
 	fi
 
-	# mkdir data
+	# MKDIR data
 	if [[ ! -d "${PATH_DATA}" ]]; then
 		mkdir "${PATH_DATA}"
 	fi
 	
-	# check repo path
+	# CHECK repo path
 	if [[ ! -d "${ANSIBLE_REPO_PATH}" ]]; then
 		echo "ANSIBLE_REPO_PATH not found: ${ANSIBLE_REPO_PATH}"
 		echo "Adjust config file at: ${PATH_CONFIG}. Exiting ..."
 		exit 1
 	fi
 
-	# build inventory path
+	# SET inventory path
 	if [[ -f "${ANSIBLE_REPO_PATH}/inventory/inventory.yml" ]]; then
 		ANSIBLE_INVENTORY_PATH="${ANSIBLE_REPO_PATH}/inventory/inventory.yml"
 	else
@@ -97,15 +97,15 @@ function main { # ${host} ${tags}
 		exit 1
 	fi
 
-	# set host
+	# SET host
 	if [[ -z "${ANSIBLE_HOST}" ]]; then
 		set_host
 	fi
 
-	# set playbook path
+	# SET playbook path
 	set_playbook
 
-	# set tags
+	# SET tags
 	if [[ -z "${ANSIBLE_TAGS}" ]]; then
 		set_tags
 	fi
@@ -130,7 +130,7 @@ function main { # ${host} ${tags}
 		vault_all_creds="prompt"
 	fi
 
-	# build cmd
+	# SET cmd
 	local CMD="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
 	CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
 	CMD+=" --tags "${ANSIBLE_TAGS}""
@@ -142,14 +142,14 @@ function main { # ${host} ${tags}
 	fi
 	CMD+=" ${ANSIBLE_PLAYBOOK_PATH}"
 
-	# build env
+	# SET env
 	if [[ -f "${ansible_config_path}" ]]; then
         CMD="ANSIBLE_CONFIG='${ANSIBLE_REPO_PATH}/ansible.cfg' ${CMD}"
 	else
 		echo "Ansible config not found at ${ansible_config_path}"
 	fi
 
-	# feedback
+	# PRINT
 	echo
 	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
 	echo -en "${GREY}"
@@ -157,7 +157,7 @@ function main { # ${host} ${tags}
 	echo
 	echo -en "${CLEAR}"
 	
-	# run cmd
+	# RUN cmd
 	eval "${CMD}"
 }
 
