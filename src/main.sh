@@ -59,21 +59,19 @@ function main { # ${host} ${tags}
 		if [[ -f "/home/${USER}/.local/bin/ansible-playbook" ]]; then
 			ANSIBLE_PLAYBOOK_EXEC_PATH="/home/${USER}/.local/bin/ansible-playbook"
 		else
-			echo "ansible-playbook executable not found. Tried:"
-			echo "/home/${USER}/.local/bin/ansible-playbook"
+			echo "${MAGENTA}ansible-playbook executable not found. Tried:"
+			echo "/home/${USER}/.local/bin/ansible-playbook${CLEAR}"
 			exit 1
 		fi
 	fi
 	
 	# check exec path
 	if [[ -z "${ANSIBLE_EXEC_PATH}" ]]; then
-		echo -ne "${GREY}"
-		echo "ansible not found in PATH"
-		echo -e "Trying /home/${USER}/.local/bin/ansible ..."
-		echo -ne "${CLEAR}"
 		if [[ -f "/home/${USER}/.local/bin/ansible" ]]; then
 			ANSIBLE_EXEC_PATH="/home/${USER}/.local/bin/ansible"
-		else 
+		else
+			echo "${MAGENTA}ansible executable not found. Tried:"
+			echo -e "/home/${USER}/.local/bin/ansible${CLEAR}"
 			exit 1
 		fi
 	fi
