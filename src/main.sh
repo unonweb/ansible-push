@@ -22,7 +22,7 @@ BLINKINK="\033[5m"
 PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 PATH_DATA="${SCRIPT_PARENT}/data"
-VERSION=1.2
+VERSION=1.21
 
 if [[ -r ${PATH_CONFIG} ]]; then
 	source "${PATH_CONFIG}"
@@ -114,7 +114,6 @@ function main { # ${host} ${tags}
 	mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "host_vars")
 	if [[ ${#host_vars_dirs[@]} -eq 1 ]]; then
 		local vault_host_path="${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml"
-		echo ${vault_host_path}
 		if [[ -f "${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml" ]]; then
 			has_host_vault=1
 		fi
@@ -142,10 +141,15 @@ function main { # ${host} ${tags}
 	local group_vars_dirs
 	local has_group_vault=0
 	mapfile -t group_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "group_vars")
-	if [[ ${#group_vars_dirs[@]} -eq 1 && -n ${VAULT_GROUP_NAME} ]]; then
-		local vault_group_path="${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml"
-		if [[ -f "${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml" ]]; then
-			has_group_vault=1
+	if [[ ${#group_vars_dirs[@]} -eq 1 ]]; then
+		if [[ -n ${VAULT_GROUP_NAME} ]]; then
+			local vault_group_path="${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml"
+			if [[ -f "${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml" ]]; then
+				has_group_vault=1
+			fi
+		else
+			echo -e "${GREY}No group name used."
+			has_group_vault=0
 		fi
 	else
 		echo "No 'group_vars' directory found at ${ANSIBLE_REPO_PATH}"
