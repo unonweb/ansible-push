@@ -125,7 +125,6 @@ function set_tags {
 			set_tags
 		else
 			echo
-			echo
 			echo -e "${CYAN}Use the following tags?${CLEAR} (enter | any)"
 			printf -- '- %s\n' "${matches[@]}"
 			read -p ">> " confirm
