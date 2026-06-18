@@ -95,104 +95,120 @@ function main { # ${host} ${tags}
 		exit 1
 	fi
 
-	# SET host
-	if [[ -z "${ANSIBLE_HOST}" ]]; then
-		set_host
-	fi
-
-	# SET playbook path
-	set_playbook
-
-	# SET tags
-	if [[ -z "${ANSIBLE_TAGS}" ]]; then
-		set_tags
-	fi
-
-	# SET has_host_vault
-	local host_vars_dirs
-	local has_host_vault=0
-	mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "host_vars")
-	if [[ ${#host_vars_dirs[@]} -eq 1 ]]; then
-		local vault_host_path="${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml"
-		if [[ -f "${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml" ]]; then
-			has_host_vault=1
+	# INTERACTIVE PART
+	while true; do
+		echo "---"
+		# SET host
+		if [[ -z "${ANSIBLE_HOST}" ]]; then
+			set_host
 		fi
-	else
-		echo "No 'host_vars' directory found at ${ANSIBLE_REPO_PATH}"
-	fi
 
-	# SET vault_host_creds
-	if ((has_host_vault)); then
-		if [[ "${ANSIBLE_HOST}" == "$(hostname)" ]]; then
-			# we'are running ansible against localhost
-			if [[ -x "${VAULT_HOST_CREDS_LOOKUP_PATH}" ]]; then
-				vault_host_creds="${VAULT_HOST_CREDS_LOOKUP_PATH}"
+		# SET playbook path
+		set_playbook
+
+		# SET tags
+		if [[ -z "${ANSIBLE_TAGS}" ]]; then
+			set_tags
+		fi
+
+		# SET has_host_vault
+		local host_vars_dirs
+		local has_host_vault=0
+		mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "host_vars")
+		if [[ ${#host_vars_dirs[@]} -eq 1 ]]; then
+			local vault_host_path="${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml"
+			if [[ -f "${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml" ]]; then
+				has_host_vault=1
+			fi
+		else
+			echo "No 'host_vars' directory found at ${ANSIBLE_REPO_PATH}"
+		fi
+
+		# SET vault_host_creds
+		if ((has_host_vault)); then
+			if [[ "${ANSIBLE_HOST}" == "$(hostname)" ]]; then
+				# we'are running ansible against localhost
+				if [[ -x "${VAULT_HOST_CREDS_LOOKUP_PATH}" ]]; then
+					vault_host_creds="${VAULT_HOST_CREDS_LOOKUP_PATH}"
+				else
+					echo
+					echo "In order to avoid asking for your own vault key everytime place a lookup script at ${VAULT_HOST_CREDS_LOOKUP_PATH} and make it executable."
+					vault_host_creds="prompt"
+				fi
 			else
-				echo
-				echo "In order to avoid asking for your own vault key everytime place a lookup script at ${VAULT_HOST_CREDS_LOOKUP_PATH} and make it executable."
 				vault_host_creds="prompt"
 			fi
-		else
-			vault_host_creds="prompt"
 		fi
-	fi
 
-	# SET has_group_vault
-	local group_vars_dirs
-	local has_group_vault=0
-	mapfile -t group_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "group_vars")
-	if [[ ${#group_vars_dirs[@]} -eq 1 ]]; then
-		if [[ -n ${VAULT_GROUP_NAME} ]]; then
-			local vault_group_path="${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml"
-			if [[ -f "${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml" ]]; then
-				has_group_vault=1
+		# SET has_group_vault
+		local group_vars_dirs
+		local has_group_vault=0
+		mapfile -t group_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "group_vars")
+		if [[ ${#group_vars_dirs[@]} -eq 1 ]]; then
+			if [[ -n ${VAULT_GROUP_NAME} ]]; then
+				local vault_group_path="${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml"
+				if [[ -f "${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml" ]]; then
+					has_group_vault=1
+				fi
+			else
+				echo -e "${GREY}No group name used.${CLEAR}"
+				has_group_vault=0
 			fi
 		else
-			echo -e "${GREY}No group name used."
-			has_group_vault=0
+			echo "No 'group_vars' directory found at ${ANSIBLE_REPO_PATH}"
 		fi
-	else
-		echo "No 'group_vars' directory found at ${ANSIBLE_REPO_PATH}"
-	fi
 
-	# SET vault_all_creds
-	if ((has_group_vault)); then
-		if [[ -f "${VAULT_GROUP_CREDS_LOOKUP_PATH}" ]]; then
-			vault_all_creds="${VAULT_GROUP_CREDS_LOOKUP_PATH}"
+		# SET vault_all_creds
+		if ((has_group_vault)); then
+			if [[ -f "${VAULT_GROUP_CREDS_LOOKUP_PATH}" ]]; then
+				vault_all_creds="${VAULT_GROUP_CREDS_LOOKUP_PATH}"
+			else
+				vault_all_creds="prompt"
+			fi
+		fi
+
+		# SET cmd
+		local CMD="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
+		CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
+		CMD+=" --tags "${ANSIBLE_TAGS}""
+		if ((has_group_vault)); then
+			CMD+=" --vault-id=${VAULT_GROUP_NAME}@${vault_all_creds}"
+		fi
+		if ((has_host_vault)); then
+			CMD+=" --vault-id=${ANSIBLE_HOST}@${vault_host_creds}"
+		fi
+		CMD+=" ${ANSIBLE_PLAYBOOK_PATH}"
+
+		# SET env
+		if [[ -f "${ansible_config_path}" ]]; then
+			CMD="ANSIBLE_CONFIG='${ANSIBLE_REPO_PATH}/ansible.cfg' ${CMD}"
 		else
-			vault_all_creds="prompt"
+			echo "Ansible config not found at ${ansible_config_path}"
 		fi
-	fi
 
-	# SET cmd
-	local CMD="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
-	CMD+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
-	CMD+=" --tags "${ANSIBLE_TAGS}""
-	if ((has_group_vault)); then
-		CMD+=" --vault-id=${VAULT_GROUP_NAME}@${vault_all_creds}"
-	fi
-	if ((has_host_vault)); then
-		CMD+=" --vault-id=${ANSIBLE_HOST}@${vault_host_creds}"
-	fi
-	CMD+=" ${ANSIBLE_PLAYBOOK_PATH}"
-
-	# SET env
-	if [[ -f "${ansible_config_path}" ]]; then
-        CMD="ANSIBLE_CONFIG='${ANSIBLE_REPO_PATH}/ansible.cfg' ${CMD}"
-	else
-		echo "Ansible config not found at ${ansible_config_path}"
-	fi
-
-	# PRINT
-	echo
-	echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
-	echo -en "${GREY}"
-	echo "${CMD}"
-	echo
-	echo -en "${CLEAR}"
-	
-	# RUN cmd
-	eval "${CMD}"
+		# PRINT
+		echo
+		echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
+		echo -en "${GREY}"
+		echo "${CMD}"
+		echo
+		echo -en "${CLEAR}"
+		
+		# RUN cmd
+		eval "${CMD}"
+		exit_code=${?}
+		if [[ ${exit_code} -ne 0 ]]; then
+			echo -e "${MAGENTA}Script returned error code: ${exit_code}${RESET}"
+			echo
+			echo "${CYAN}Start from beginning or run the same command again?${RESET} (enter | r)"
+			read -p ">> "
+			if [[ "${REPLY}" == "r" ]]; then
+				eval "${CMD}"
+			else
+				continue
+			fi
+		fi
+	done
 }
 
 main "${1:-""}" "${2:-""}"
