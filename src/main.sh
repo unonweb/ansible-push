@@ -35,6 +35,7 @@ fi
 # IMPORTS
 source ${SCRIPT_DIR}/lib/set_tags.sh
 source ${SCRIPT_DIR}/lib/set_host.sh
+source ${SCRIPT_DIR}/lib/set_playbook.sh
 
 function main { # ${host} ${tags}
 
@@ -98,18 +99,8 @@ function main { # ${host} ${tags}
 		set_host
 	fi
 
-	# build playbook path
-	if [[ -f "${ANSIBLE_REPO_PATH}/playbooks/${ANSIBLE_HOST}.yml" ]]; then
-		ANSIBLE_PLAYBOOK_PATH="${ANSIBLE_REPO_PATH}/playbooks/${ANSIBLE_HOST}.yml"
-	elif [[ -f "${ANSIBLE_REPO_PATH}/playbooks/hosts.${ANSIBLE_HOST}.yml" ]]; then
-		ANSIBLE_PLAYBOOK_PATH="${ANSIBLE_REPO_PATH}/playbooks/hosts.${ANSIBLE_HOST}.yml"
-	else
-		echo "ERROR: Path to playbook not found. Tried:"
-		echo "${ANSIBLE_REPO_PATH}/playbooks/${ANSIBLE_HOST}.yml"
-		echo "${ANSIBLE_REPO_PATH}/playbooks/hosts.${ANSIBLE_HOST}.yml"
-		echo -e "${CYAN}Enter path${CLEAR}"
-		read -p ">> " ANSIBLE_PLAYBOOK_PATH
-	fi
+	# set playbook path
+	set_playbook
 
 	# set tags
 	if [[ -z "${ANSIBLE_TAGS}" ]]; then
