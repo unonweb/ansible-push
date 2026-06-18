@@ -202,7 +202,9 @@ function main { # ${host} ${tags}
 			echo
 		fi
 
-		echo "${CYAN}Start from beginning or run the same command again?${RESET} (enter | r)"
+		echo
+		echo "---"
+		echo -e "${CYAN}Start from beginning or run the same command again?${RESET} (enter | r)"
 		read -p ">> "
 		if [[ "${REPLY}" == "r" ]]; then
 			eval "${CMD}"
