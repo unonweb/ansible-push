@@ -209,6 +209,8 @@ function main { # ${host} ${tags}
 		if [[ "${REPLY}" == "r" ]]; then
 			eval "${CMD}"
 		else
+			ANSIBLE_HOST=""
+			ANSIBLE_TAGS=""
 			continue
 		fi
 
