@@ -120,7 +120,7 @@ function main { # ${host} ${tags}
 		local has_host_vault=0
 		debug ""${ANSIBLE_REPO_PATH}" -type d -name "host_vars""
 
-		mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "host_vars")
+		mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -maxdepth 2 -type d -name "host_vars")
 		if [[ ${#host_vars_dirs[@]} -eq 1 ]]; then
 			local vault_host_path="${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml"
 			if [[ -f "${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml" ]]; then
