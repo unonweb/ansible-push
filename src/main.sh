@@ -207,17 +207,24 @@ function main { # ${host} ${tags}
 			echo
 		fi
 
-		echo
-		echo "---"
-		echo -e "${CYAN}Start from beginning or run the same command again?${RESET} (enter | r)"
-		read -p ">> "
-		if [[ "${REPLY}" == "r" ]]; then
-			eval "${CMD}"
-		else
-			ANSIBLE_HOST=""
-			ANSIBLE_TAGS=""
-			continue
-		fi
+		while true; do
+			REPLY=""
+			echo
+			echo "---"
+			echo -e "${CYAN}Start from beginning or run this command again?${RESET} (enter | r)"
+			echo -e "${GREY}${CMD}${CLEAR}"
+			echo
+			read -p ">> "
+			if [[ "${REPLY}" == "r" ]]; then
+				eval "${CMD}"
+				continue
+			else
+				# start from beginning
+				ANSIBLE_HOST=""
+				ANSIBLE_TAGS=""
+				break
+			fi
+		done
 
 	done
 }
