@@ -226,6 +226,7 @@ function main { # ${host} ${tags}
 					echo -e "${index})  ${opt}"
 					((index++))
 				done
+				continue
 			fi
 			case ${opt} in
 				"Start from beginning")
