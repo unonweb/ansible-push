@@ -22,7 +22,9 @@ BLINKINK="\033[5m"
 PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 PATH_DATA="${SCRIPT_PARENT}/data"
-VERSION=1.21
+VERSION=1.3
+DEBUG=1
+LOG=0
 
 if [[ -r ${PATH_CONFIG} ]]; then
 	source "${PATH_CONFIG}"
@@ -35,6 +37,8 @@ fi
 source ${SCRIPT_DIR}/lib/set_tags.sh
 source ${SCRIPT_DIR}/lib/set_host.sh
 source ${SCRIPT_DIR}/lib/set_playbook.sh
+source ${SCRIPT_DIR}/lib/log.sh
+source ${SCRIPT_DIR}/lib/debug.sh
 
 function main { # ${host} ${tags}
 
@@ -114,6 +118,8 @@ function main { # ${host} ${tags}
 		# SET has_host_vault
 		local host_vars_dirs
 		local has_host_vault=0
+		debug ""${ANSIBLE_REPO_PATH}" -type d -name "host_vars""
+
 		mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "host_vars")
 		if [[ ${#host_vars_dirs[@]} -eq 1 ]]; then
 			local vault_host_path="${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml"
