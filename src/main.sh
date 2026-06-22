@@ -213,7 +213,6 @@ function main { # ${host} ${tags}
 			"Run cmd again"
 			"Run cmd again in verbose mode"
 			"Run cmd again in very verbose mode"
-			"Show Options"
 		)
 		echo
 		echo "---"
@@ -221,6 +220,13 @@ function main { # ${host} ${tags}
 		echo -e "Last cmd:\n${GREY}${CMD}${CLEAR}"
 		echo
 		select opt in "${options[@]}"; do
+			if [[ ${REPLY} == "help" || ${REPLY} == "?" ]]; then
+				local index=1
+				for opt in "${options[@]}"; do
+					echo -e "${index})  ${opt}"
+					((index++))
+				done
+			fi
 			case ${opt} in
 				"Start from beginning")
 					ANSIBLE_HOST=""
@@ -238,13 +244,6 @@ function main { # ${host} ${tags}
 				"Run cmd again in very verbose mode")
 					eval "${CMD} -vv"
 					continue
-					;;
-				"Show Options")
-					local index=1
-					for opt in "${options[@]}"; do
-						echo -e "${index})  ${opt}"
-						((index++))
-					done
 					;;
 				*)
 					echo "Wrong option: ${REPLY}"
