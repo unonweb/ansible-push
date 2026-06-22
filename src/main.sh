@@ -118,8 +118,7 @@ function main { # ${host} ${tags}
 		# SET has_host_vault
 		local host_vars_dirs
 		local has_host_vault=0
-		debug ""${ANSIBLE_REPO_PATH}" -type d -name "host_vars""
-
+		
 		mapfile -t host_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -maxdepth 2 -type d -name "host_vars")
 		if [[ ${#host_vars_dirs[@]} -eq 1 ]]; then
 			local vault_host_path="${host_vars_dirs[0]}/${ANSIBLE_HOST}/vault.yml"
@@ -149,7 +148,7 @@ function main { # ${host} ${tags}
 		# SET has_group_vault
 		local group_vars_dirs
 		local has_group_vault=0
-		mapfile -t group_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -type d -name "group_vars")
+		mapfile -t group_vars_dirs < <(find "${ANSIBLE_REPO_PATH}" -maxdepth 2 -type d -name "group_vars")
 		if [[ ${#group_vars_dirs[@]} -eq 1 ]]; then
 			if [[ -n ${VAULT_GROUP_NAME} ]]; then
 				local vault_group_path="${group_vars_dirs[0]}/${VAULT_GROUP_NAME}/vault.yml"
