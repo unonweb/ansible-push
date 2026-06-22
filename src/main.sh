@@ -22,7 +22,7 @@ BLINKINK="\033[5m"
 PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 PATH_DATA="${SCRIPT_PARENT}/data"
-VERSION=1.3
+VERSION=1.4
 DEBUG=1
 LOG=0
 
@@ -207,25 +207,41 @@ function main { # ${host} ${tags}
 			echo
 		fi
 
-		while true; do
-			REPLY=""
-			echo
-			echo "---"
-			echo -e "${CYAN}Start from beginning or run this command again?${RESET} (enter | r)"
-			echo -e "${GREY}${CMD}${CLEAR}"
-			echo
-			read -p ">> "
-			if [[ "${REPLY}" == "r" ]]; then
-				eval "${CMD}"
-				continue
-			else
-				# start from beginning
-				ANSIBLE_HOST=""
-				ANSIBLE_TAGS=""
-				break
-			fi
+		# WHAT'S next?
+		local options=(
+			"Start from beginning"
+			"Run cmd again"
+			"Run cmd again in verbose mode"
+			"Run cmd again in very verbose mode"
+		)
+		echo
+		echo "---"
+		echo -e "${CYAN}What's next?${RESET}"
+		echo -e "Last cmd:\n${GREY}${CMD}${CLEAR}"
+		echo
+		select opt in "${options[@]}"; do
+			case ${opt} in
+				"Start from beginning")
+					ANSIBLE_HOST=""
+					ANSIBLE_TAGS=""
+					break
+					;;
+				"Run cmd again")
+					eval "${CMD}"
+					continue
+					;;
+				"Run cmd again in verbose mode")
+					eval "${CMD} -v"
+					continue
+					;;
+				"Run cmd again in very verbose mode")
+					eval "${CMD} -vv"
+					continue
+					;;
+				*)
+					echo "Wrong option: ${REPLY}"
+			esac
 		done
-
 	done
 }
 
