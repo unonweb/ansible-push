@@ -213,6 +213,7 @@ function main { # ${host} ${tags}
 			"Run cmd again"
 			"Run cmd again in verbose mode"
 			"Run cmd again in very verbose mode"
+			"Show Options"
 		)
 		echo
 		echo "---"
@@ -237,6 +238,13 @@ function main { # ${host} ${tags}
 				"Run cmd again in very verbose mode")
 					eval "${CMD} -vv"
 					continue
+					;;
+				"Show Options")
+					local index=1
+					for opt in "${options[@]}"; do
+						echo -e "${index})  ${opt}"
+						((index++))
+					done
 					;;
 				*)
 					echo "Wrong option: ${REPLY}"
