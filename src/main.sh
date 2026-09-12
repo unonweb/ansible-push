@@ -47,6 +47,99 @@ source ${SCRIPT_DIR}/lib/add_vault.sh
 source ${SCRIPT_DIR}/lib/add_vault_flag.sh
 source ${SCRIPT_DIR}/lib/get_possible_vaults.sh
 
+function show_menu_tags {
+
+	local options=(
+		"Set" "Refresh List" "Return"
+	)
+
+	local default_choice=1
+	local choice
+
+	echo -e "${CYAN}Edit Tags:${CLEAR}"
+	for i in "${!options[@]}"; do
+		local index=$((i + 1))
+		if [[ ${index} -eq ${default_choice} ]]; then
+			#printf "%d) %s [default]\n" "${index}" "${options[${i}]}"
+			echo -e "${BOLD}${index}) ${options[${i}]}${CLEAR}"
+		else
+			# printf "%d) %s\n" "${index}" "${options[${i}]}"
+			echo -e "${index}) ${options[${i}]}"
+		fi
+	done
+
+	read -r -p ">> " choice
+	
+	# If user pressed Enter, use the default
+	choice="${choice:-${default_choice}}"
+
+	case "${choice}" in
+		# Set
+		1)
+			set_tags
+			return
+			;;
+		# Refresh List
+		2)
+			save_tag_list
+			return
+			;;
+		# Return
+		3)
+			return
+			;;
+	esac
+}
+
+function show_menu_vaults {
+
+	local options=(
+		"Add host vault" "Add group vault" "Reset vaults" "Return"
+	)
+
+	local default_choice=1
+	local choice
+
+	echo -e "${CYAN}Edit Vaults:${CLEAR}"
+	for i in "${!options[@]}"; do
+		local index=$((i + 1))
+		if [[ ${index} -eq ${default_choice} ]]; then
+			#printf "%d) %s [default]\n" "${index}" "${options[${i}]}"
+			echo -e "${BOLD}${index}) ${options[${i}]}${CLEAR}"
+		else
+			# printf "%d) %s\n" "${index}" "${options[${i}]}"
+			echo -e "${index}) ${options[${i}]}"
+		fi
+	done
+
+	read -r -p ">> " choice
+	
+	# If user pressed Enter, use the default
+	choice="${choice:-${default_choice}}"
+
+	case "${choice}" in
+		1)
+			# Add host vault
+			add_vault host
+			return
+			;;
+		2)
+			# Add group vault
+			add_vault group
+			return
+			;;
+		3)
+			# Reset vaults
+			VAULT_FLAGS=()
+			return
+			;;
+		4)
+			# Return
+			return
+			;;
+	esac
+}
+
 function main {
 
 	ANSIBLE_HOST=""
@@ -126,16 +219,20 @@ function main {
 	done
 
 	# Main Menu
-	while true; do
+	local options=(
+		"Host"
+		"Tags"
+		"Vaults"
+		"Run Ansible"
+		"Run Ansible (verbose)"
+		"Exit"
+	)
 
-		local options=(
-			"Host"
-			"Tags"
-			"Vaults"
-			"Run Ansible"
-			"Run Ansible (verbose)"
-			"Exit"
-		)
+	# Set 1-based index for default option (e.g., 4 = "Run Ansible")
+	local default_choice=4
+	local choice
+
+	while true; do
 
 		# SET cmd
 		local cmd="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
@@ -150,6 +247,7 @@ function main {
 			echo "Ansible config not found at ${ANSIBLE_CONFIG_PATH}"
 		fi
 
+		# overview
 		echo
 		echo "-------------------------------"
 		echo -e "Host:      ${GREEN}${ANSIBLE_HOST}${CLEAR}"
@@ -160,113 +258,91 @@ function main {
 		echo "-------------------------------"
 		echo
 
+		# menu
 		echo -e "${CYAN}Main Menu:${CLEAR}"
-		PS3=">> "
-		select opt in "${options[@]}"; do
-			case "${opt}" in
-			
-				"Host")
-					echo
-					set_host
-					set_playbook_path
-					# reset vaults
-					VAULT_FLAGS=()
-					for id in ${VAULT_DEFAULT_IDS}; do
-						add_vault_flag "${id}"
-					done
-					add_vault_flag "${ANSIBLE_HOST}"
-					break
-					;;
-
-				"Tags")
-					echo
-					echo -e "${CYAN}Edit Tags:${CLEAR}"
-					select opt in "Set" "Refresh List" "Return"; do
-						case "${opt}" in
-							"Set")
-								set_tags
-								break
-								;;
-							"Refresh List")
-								save_tag_list
-								break
-								;;
-							"Return")
-								break
-								;;
-						esac
-					done
-					break
-					;;
-				"Vaults")
-					echo
-					echo -e "${CYAN}Edit Vaults:${CLEAR}"
-					select opt in "Add host vault" "Add group vault" "Reset vaults" "Return"; do
-						case "${opt}" in
-							"Add host vault")
-								add_vault host
-								break
-								;;
-
-							"Add group vault")
-								add_vault group
-								break
-								;;
-							
-							"Reset vaults")
-								VAULT_FLAGS=()
-								break
-								;;
-								
-							"Return")
-								break
-								;;
-						esac
-					done
-					break
-					;;
-
-				"Run Ansible")
-					# PRINT
-					echo
-					echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
-					echo -en "${GREY}"
-					echo "${cmd}"
-					echo
-					echo -en "${CLEAR}"
-					
-					# RUN cmd
-					eval "${cmd}"
-					
-					if [[ ${?} -ne 0 ]]; then
-						echo -e "${MAGENTA}Script returned error code: ${exit_code}${RESET}"
-						echo
-					fi
-					
-					break
-					;;
-				
-				"Run Ansible (verbose)")
-					eval "${cmd} -v"
-					break
-					;;
-				
-				"Run Ansible (very verbose)")
-					eval "${cmd} -vv"
-					break
-					;;
-				
-				"Exit")
-					exit 0
-					;;
-				
-				*)
-					echo "Bad option: ${REPLY}"
-					break
-					;;
-
-			esac
+		for i in "${!options[@]}"; do
+			local index=$((i + 1))
+			if [[ ${index} -eq ${default_choice} ]]; then
+				#printf "%d) %s [default]\n" "${index}" "${options[${i}]}"
+				echo -e "${BOLD}${index}) ${options[${i}]}${CLEAR}"
+			else
+				# printf "%d) %s\n" "${index}" "${options[${i}]}"
+				echo -e "${index}) ${options[${i}]}"
+			fi
 		done
+
+		read -r -p ">> " choice
+		
+		# If user pressed Enter, use the default
+		choice="${choice:-${default_choice}}"
+
+		case "${choice}" in
+			1)
+				# Host
+				# ----
+				echo
+				set_host
+				set_playbook_path
+				# reset vaults
+				VAULT_FLAGS=()
+				for id in ${VAULT_DEFAULT_IDS}; do
+					add_vault_flag "${id}"
+				done
+				add_vault_flag "${ANSIBLE_HOST}"
+				;;
+			2)
+				# Tags
+				# ----
+				echo
+				show_menu_tags
+				;;
+			3)
+				# Vaults
+				# ------
+				echo
+				show_menu_vaults
+				;;
+			4)
+				# Run
+				# ---
+				# PRINT
+				echo
+				echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
+				echo -en "${GREY}"
+				echo "${cmd}"
+				echo
+				echo -en "${CLEAR}"
+				
+				# RUN cmd
+				eval "${cmd}"
+				
+				if [[ ${?} -ne 0 ]]; then
+					echo -e "${MAGENTA}Script returned error code: ${exit_code}${RESET}"
+					echo
+				fi
+				;;
+			5)
+				# Run
+				# --- 
+				# (verbose)
+				eval "${cmd} -v"
+				;;
+			6)
+				# Run
+				# --- 
+				# (very verbose)
+				eval "${cmd} -vv"
+				;;
+			7)
+				# Exit
+				# ----
+				exit 0
+				;;
+			
+			*)
+				echo "Bad option: ${REPLY}"
+				;;
+		esac
 	done
 }
 
