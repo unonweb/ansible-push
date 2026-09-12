@@ -340,12 +340,6 @@ function main {
 				eval "${cmd} -v"
 				;;
 			6)
-				# Run
-				# --- 
-				# (very verbose)
-				eval "${cmd} -vv"
-				;;
-			7)
 				# Exit
 				# ----
 				exit 0
