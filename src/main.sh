@@ -68,7 +68,7 @@ function show_menu_tags {
 	local default_choice=1
 	local choice
 
-	echo -e "${CYAN}Edit Tags:${CLEAR}"
+	echo -e "${UNDERLINE}Edit Tags${CLEAR}"
 	for i in "${!options[@]}"; do
 		local index=$((i + 1))
 		if [[ ${index} -eq ${default_choice} ]]; then
@@ -112,7 +112,7 @@ function show_menu_vaults {
 	local default_choice=1
 	local choice
 
-	echo -e "${CYAN}Edit Vaults:${CLEAR}"
+	echo -e "${UNDERLINE}Edit Vaults${CLEAR}"
 	for i in "${!options[@]}"; do
 		local index=$((i + 1))
 		if [[ ${index} -eq ${default_choice} ]]; then
@@ -271,7 +271,7 @@ function main {
 		echo
 
 		# menu
-		echo -e "${CYAN}Main Menu:${CLEAR}"
+		echo -e "${UNDERLINE}Main Menu${CLEAR}"
 		for i in "${!options[@]}"; do
 			local index=$((i + 1))
 			if [[ ${index} -eq ${default_choice} ]]; then
