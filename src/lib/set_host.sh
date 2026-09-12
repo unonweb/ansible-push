@@ -13,6 +13,10 @@ function set_host {
 	local host_query
 	local available_hosts
 
+	# Trap SIGINT (CTRL+C)
+	local old_trap=$(trap -p SIGINT)
+    trap 'return 0' SIGINT
+
 	while IFS= read -r line; do
 		# remove leading whitespace characters
 		line="${line#"${line%%[![:space:]]*}"}"
@@ -85,6 +89,14 @@ function set_host {
 		fi
 	fi
 
+	# restore trap
+	if [[ -n "${old_trap}" ]]; then
+		eval "${old_trap}"
+	else
+		trap - SIGINT
+	fi
+
+	# return
 	if [[ -n ${ANSIBLE_HOST} ]]; then
 		echo "${ANSIBLE_HOST}" > "${PATH_DATA_LAST_HOST}"
 		return 0

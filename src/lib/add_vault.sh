@@ -2,8 +2,6 @@
 # --------
 # - ANSIBLE_REPO_PATH
 # - ANSIBLE_HOST
-# - VAULT_HOST_CREDS_LOOKUP_PATH
-# - VAULT_GROUP_NAME
 # - VAULT_MAP
 
 function add_vault {

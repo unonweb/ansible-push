@@ -1,23 +1,17 @@
-ASSUMPTIONS / RESTRICTIONS
-==========================
+VARS
+====
 
-This is due to how I use Ansible.
+```sh
+# Associate Vault-IDs with password lookup methods:
+VAULT_MAP=(
+    ["all"]="/path/to/lookup-script.sh"
+)
+# Add Vault-IDs that shall be added by default:
+VAULT_DEFAULT_IDS
+```
 
-Vaults
-------
+ASSUMPTIONS
+===========
 
-Only the following Ansible Vaults (with IDs) are implemented in this script:
---vault-id=all
---vault-id=$(hostname)
-
-Playbooks
----------
-
+Only one playbook may be executed at once.
 I assume one playbook per host.
-
-
-NOTES
-=====
-
-Executing `src/main.sh` from `run.sh` means we don't inherit the environment of the user (no PATH, no aliases).
-Sourcing `src/main.sh` from `run.sh` means if we use exit in the first script we also exit the latter script!
