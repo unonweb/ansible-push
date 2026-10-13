@@ -22,7 +22,7 @@ function save_tag_list {
 
 	# Get available tags
 	echo
-	echo -e "${BLINKING}Searching for tags associated with playbook $(basename ${ANSIBLE_PLAYBOOK_PATH}) ...${CLEAR}"
+	echo -e "Searching for tags associated with playbook $(basename ${ANSIBLE_PLAYBOOK_PATH}) ${BLINKING}...${CLEAR}"
 	# Extracting TASK TAGS line
 	local output_list_tags=$(${ANSIBLE_PLAYBOOK_EXEC_PATH} --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
 	# Removing the prefix and brackets
