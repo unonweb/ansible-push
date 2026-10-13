@@ -4,11 +4,6 @@
 # --------
 # - ANSIBLE_REPO_PATH
 
-# RECOMMENDS
-# ----------
-# - VAULT_MAP
-# - VAULT_DEFAULT_IDS
-
 # BOILERPLATE
 # -----------
 export SCRIPT_PATH="$(readlink -f "${BASH_SOURCE}")"
@@ -33,9 +28,9 @@ export BLINKING="\033[5m"
 export PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 export PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 export PATH_DATA="${SCRIPT_PARENT}/data"
-export PATH_DATA_LAST_HOST="${PATH_DATA}/last_host"
+export PATH_DATA_LAST_PLAYBOOK="${PATH_DATA}/last_playbook"
 export PATH_DATA_LAST_TAGS="${PATH_DATA}/last_tags"
-export VERSION=2
+export VERSION=3
 export DEBUG=1
 export LOG=0
 
@@ -50,14 +45,11 @@ fi
 # -------
 source ${SCRIPT_DIR}/lib/save_tag_list.sh
 source ${SCRIPT_DIR}/lib/set_tags.sh
-source ${SCRIPT_DIR}/lib/set_host.sh
 source ${SCRIPT_DIR}/lib/set_playbook_path.sh
+source ${SCRIPT_DIR}/lib/set_master_pw.sh
 source ${SCRIPT_DIR}/lib/log.sh
 source ${SCRIPT_DIR}/lib/debug.sh
 source ${SCRIPT_DIR}/lib/set_inventory_path.sh
-source ${SCRIPT_DIR}/lib/add_vault.sh
-source ${SCRIPT_DIR}/lib/add_vault_flag.sh
-source ${SCRIPT_DIR}/lib/get_possible_vaults.sh
 
 function show_menu_tags {
 
@@ -86,66 +78,17 @@ function show_menu_tags {
 	choice="${choice:-${default_choice}}"
 
 	case "${choice}" in
-		# Set
 		1)
+			# Set
 			set_tags
 			return
 			;;
-		# Refresh List
 		2)
+			# Refresh List
 			save_tag_list
 			return
 			;;
-		# Return
 		3)
-			return
-			;;
-	esac
-}
-
-function show_menu_vaults {
-
-	local options=(
-		"Add host vault" "Add group vault" "Reset vaults" "Return"
-	)
-
-	local default_choice=1
-	local choice
-
-	echo -e "${UNDERLINE}Edit Vaults${CLEAR}"
-	for i in "${!options[@]}"; do
-		local index=$((i + 1))
-		if [[ ${index} -eq ${default_choice} ]]; then
-			#printf "%d) %s [default]\n" "${index}" "${options[${i}]}"
-			echo -e "${BOLD}${index}) ${options[${i}]}${CLEAR}"
-		else
-			# printf "%d) %s\n" "${index}" "${options[${i}]}"
-			echo -e "${index}) ${options[${i}]}"
-		fi
-	done
-
-	read -r -p ">> " choice
-	
-	# If user pressed Enter, use the default
-	choice="${choice:-${default_choice}}"
-
-	case "${choice}" in
-		1)
-			# Add host vault
-			add_vault host
-			return
-			;;
-		2)
-			# Add group vault
-			add_vault group
-			return
-			;;
-		3)
-			# Reset vaults
-			VAULT_FLAGS=()
-			return
-			;;
-		4)
 			# Return
 			return
 			;;
@@ -154,18 +97,23 @@ function show_menu_vaults {
 
 function main {
 
-	ANSIBLE_HOST=""
+	if ((VAULTS_USE_MASTER_PW_FOR_VAULT_PW_LOOKUP)); then
+		if [[ -z "${VAULTS_MASTER_PW_FILE_NAME}" ]]; then
+			echo "ERROR: Var empty: VAULTS_MASTER_PW_FILE_NAME"
+			return 1
+		fi
+		# Use XDG_RUNTIME_DIR (RAM-backed tmpfs, strictly 0700 perms)
+		MASTER_PW_FILE="${XDG_RUNTIME_DIR:-${HOME}/.cache}/${VAULTS_MASTER_PW_FILE_NAME}"
+
+		# Automatically wipe the key file from RAM when the wrapper exits
+		trap 'rm -f "${MASTER_PW_FILE}"' EXIT
+	fi
+
 	ANSIBLE_TAGS=""
 	ANSIBLE_EXEC_PATH=$(which ansible)
 	ANSIBLE_PLAYBOOK_EXEC_PATH=$(which ansible-playbook)
 	
 	ANSIBLE_CONFIG_PATH="${ANSIBLE_REPO_PATH}/ansible.cfg"
-	VAULT_FLAGS=()
-
-	# PRINT version
-	echo -ne "${GREY}"
-	echo -e "Version: ${VERSION}"
-	echo -ne "${CLEAR}"
 
 	# CHECK exec path
 	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC_PATH}" ]]; then
@@ -204,53 +152,40 @@ function main {
 	# INIT inventory path
 	set_inventory_path
 
-	# INIT possible vaults
-	get_possible_vaults
-
-	# INIT host
-	if [[ -f "${PATH_DATA_LAST_HOST}" ]]; then
-		ANSIBLE_HOST=$(< "${PATH_DATA_LAST_HOST}")
+	# INIT playbook
+	if [[ -f "${PATH_DATA_LAST_PLAYBOOK}" ]]; then
+		ANSIBLE_PLAYBOOK_PATH=$(< "${PATH_DATA_LAST_PLAYBOOK}")
 	else
-		set_host
+		set_playbook_path
 	fi
 
 	# INIT tags
-	if [[ -f "${PATH_DATA_LAST_HOST}" ]]; then
+	if [[ -f "${PATH_DATA_LAST_TAGS}" ]]; then
 		ANSIBLE_TAGS=$(< "${PATH_DATA_LAST_TAGS}")
 	else
 		set_tags
 	fi
 
-	# INIT playbook path
-	set_playbook_path
-
-	# INIT vault flags
-	add_vault_flag "${ANSIBLE_HOST}"
-	for id in ${VAULT_DEFAULT_IDS}; do
-		add_vault_flag "${id}"
-	done
-
 	# Main Menu
 	local options=(
-		"Host"
+		"Playbook"
 		"Tags"
-		"Vaults"
 		"Run Ansible"
 		"Run Ansible (verbose)"
 		"Exit"
 	)
 
 	# Set 1-based index for default option (e.g., 4 = "Run Ansible")
-	local default_choice=4
+	local default_choice=3
 	local choice
-
+	
+	echo
 	while true; do
 
 		# SET cmd
 		local cmd="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
 		cmd+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
-		cmd+=" --tags "${ANSIBLE_TAGS}" "
-		cmd+="${VAULT_FLAGS[@]}"
+		cmd+=" --tags ${ANSIBLE_TAGS}"
 		cmd+=" ${ANSIBLE_PLAYBOOK_PATH}"
 		# SET env
 		if [[ -f "${ANSIBLE_CONFIG_PATH}" ]]; then
@@ -260,12 +195,15 @@ function main {
 		fi
 
 		# overview
-		echo
+		# echo -e "Inventory: ${GREEN}${ANSIBLE_INVENTORY_PATH}${CLEAR}"
+		local playbook_name=$(basename ${ANSIBLE_PLAYBOOK_PATH})
+		
+		# PRINT version
+		echo -ne "${GREY}"
+		echo -e "Version:   ${VERSION}"
+		echo -ne "${CLEAR}"
 		echo "-------------------------------"
-		echo -e "Host:      ${GREEN}${ANSIBLE_HOST}${CLEAR}"
-		echo -e "Playbook:  ${GREEN}${ANSIBLE_PLAYBOOK_PATH}${CLEAR}"
-		echo -e "Inventory: ${GREEN}${ANSIBLE_INVENTORY_PATH}${CLEAR}"
-		echo -e "Vaults:    ${GREEN}${VAULT_FLAGS[@]}${CLEAR}"
+		echo -e "Playbook:  ${GREEN}${playbook_name}${CLEAR}"
 		echo -e "Tags:      ${GREEN}${ANSIBLE_TAGS}${CLEAR}"
 		echo "-------------------------------"
 		echo
@@ -290,17 +228,10 @@ function main {
 
 		case "${choice}" in
 			1)
-				# Host
-				# ----
+				# Playbook
+				# --------
 				echo
-				set_host
 				set_playbook_path
-				# reset vaults
-				VAULT_FLAGS=()
-				for id in ${VAULT_DEFAULT_IDS}; do
-					add_vault_flag "${id}"
-				done
-				add_vault_flag "${ANSIBLE_HOST}"
 				;;
 			2)
 				# Tags
@@ -309,17 +240,14 @@ function main {
 				show_menu_tags
 				;;
 			3)
-				# Vaults
-				# ------
-				echo
-				show_menu_vaults
-				;;
-			4)
 				# Run
 				# ---
+
+				set_master_pw
+
 				# PRINT
 				echo
-				echo -e "${CYAN}Running ansible on host "${ANSIBLE_HOST}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
+				echo -e "${CYAN}Running Ansible Playbook "${ANSIBLE_PLAYBOOK_PATH}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
 				echo -en "${GREY}"
 				echo "${cmd}"
 				echo
@@ -333,13 +261,16 @@ function main {
 					echo
 				fi
 				;;
-			5)
+			4)
 				# Run
 				# --- 
 				# (verbose)
+
+				set_master_pw
+				
 				eval "${cmd} -v"
 				;;
-			6)
+			5)
 				# Exit
 				# ----
 				exit 0
