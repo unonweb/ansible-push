@@ -95,6 +95,63 @@ function show_menu_tags {
 	esac
 }
 
+function show_menu_lint {
+
+	# REQUIRES
+	# --------
+	# - ANSIBLE_PLAYBOOK_PATH
+	# - ANSIBLE_REPO_PATH
+
+	local ansible_lint_config_path="${ANSIBLE_REPO_PATH}/.ansible-lint.yml"
+	local profiles=(
+		"min" "basic" "moderate" "safety" "shared" "production"
+	)
+	local default_choice=2
+	local choice
+
+	if ! which ansible-lint &> /dev/null; then
+		echo "ERROR: ansible-lint cmd not found. Install into 'ansible' venv with:"
+		echo "pipx inject --force --include-apps ansible ansible-lint"
+		return 1
+	fi
+
+	# Trap SIGINT (CTRL+C)
+	local old_trap=$(trap -p SIGINT)
+    trap 'return 0' SIGINT
+
+	if [[ ! -f "${ansible_lint_config_path}" ]]; then
+		echo "WARN: File does not exist: ${ansible_lint_config_path}"
+	fi
+
+	echo -e "${GREY}Config: ${ansible_lint_config_path}${CLEAR}"
+	echo
+	echo -e "${UNDERLINE}Choose Profile${CLEAR}"
+	for i in "${!profiles[@]}"; do
+		local index=$((i + 1))
+		if [[ ${index} -eq ${default_choice} ]]; then
+			echo -e "${BOLD}${index}) ${profiles[${i}]}${CLEAR}"
+		else
+			echo -e "${index}) ${profiles[${i}]}"
+		fi
+	done
+
+	read -r -p ">> " choice
+	
+	# If user pressed Enter, use the default
+	choice="${choice:-${default_choice}}"
+
+	local profile=${profiles[${choice}]}
+
+	ansible-lint --config-file "${ansible_lint_config_path}" --profile=${profile} --force-color --fix=yaml "${ANSIBLE_PLAYBOOK_PATH}"
+
+	# restore trap
+	if [[ -n "${old_trap}" ]]; then
+		eval "${old_trap}"
+	else
+		trap - SIGINT
+	fi
+}
+
 function main {
 
 	if ((VAULTS_USE_MASTER_PW_FOR_VAULT_PW_LOOKUP)); then
@@ -170,13 +227,14 @@ function main {
 	local options=(
 		"Playbook"
 		"Tags"
+		"Lint"
 		"Run Ansible"
 		"Run Ansible (verbose)"
 		"Exit"
 	)
 
 	# Set 1-based index for default option (e.g., 4 = "Run Ansible")
-	local default_choice=3
+	local default_choice=2
 	local choice
 	
 	echo
@@ -240,9 +298,15 @@ function main {
 				show_menu_tags
 				;;
 			3)
+				# Lint
+				# ----
+				echo
+				show_menu_lint
+				;;
+			4)
 				# Run
 				# ---
-
+				echo
 				set_master_pw
 
 				# PRINT
@@ -261,7 +325,7 @@ function main {
 					echo
 				fi
 				;;
-			4)
+			5)
 				# Run
 				# --- 
 				# (verbose)
@@ -270,7 +334,7 @@ function main {
 				
 				eval "${cmd} -v"
 				;;
-			5)
+			6)
 				# Exit
 				# ----
 				exit 0
