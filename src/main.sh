@@ -234,7 +234,7 @@ function main {
 	)
 
 	# Set 1-based index for default option (e.g., 4 = "Run Ansible")
-	local default_choice=2
+	local default_choice=4
 	local choice
 	
 	echo
