@@ -30,7 +30,7 @@ export PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 export PATH_DATA="${SCRIPT_PARENT}/data"
 export PATH_DATA_LAST_PLAYBOOK="${PATH_DATA}/last_playbook"
 export PATH_DATA_LAST_TAGS="${PATH_DATA}/last_tags"
-export VERSION=3.1
+export VERSION=261016
 export DEBUG=1
 export LOG=0
 
@@ -238,6 +238,9 @@ function main {
 	local choice
 	
 	echo
+	echo -ne "${GREY}"
+	echo -e "Version:   ${VERSION}"
+	echo -ne "${CLEAR}"
 	while true; do
 
 		# SET cmd
@@ -257,9 +260,6 @@ function main {
 		local playbook_name=$(basename ${ANSIBLE_PLAYBOOK_PATH})
 		
 		# PRINT version
-		echo -ne "${GREY}"
-		echo -e "Version:   ${VERSION}"
-		echo -ne "${CLEAR}"
 		echo "-------------------------------"
 		echo -e "Playbook:  ${GREEN}${playbook_name}${CLEAR}"
 		echo -e "Tags:      ${GREEN}${ANSIBLE_TAGS}${CLEAR}"

@@ -30,13 +30,23 @@ function set_playbook_path {
 	elif [[ ${#playbook_paths[@]} -eq 1 ]]; then
 		ANSIBLE_PLAYBOOK_PATH="${playbook_paths[0]}"
 	else
-		select playbook_path in "${playbook_paths[@]}"; do
-			if [ -n "${playbook_path}" ]; then
+		# menu
+		while true; do
+			for i in "${!playbook_paths[@]}"; do
+				local index=$((i + 1))
+				echo -e "${index}) $(basename ${playbook_paths[${i}]})"
+			done
+			read -r -p ">> " choice
+
+			local playbook_path=${playbook_paths[${choice}]}
+			
+			if [[ ${choice} =~ ^-?[0-9]+$ ]] && [[ -n ${playbook_path} ]]; then
 				ANSIBLE_PLAYBOOK_PATH="${playbook_path}"
 				break
 			else
-				echo -e "${MAGENTA}Invalid choice - try again.${CLEAR}"
-				continue
+				echo
+		 		echo -e "${MAGENTA}Invalid choice - try again.${CLEAR}"
+		 		continue		
 			fi
 		done
 	fi
