@@ -30,7 +30,7 @@ export PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 export PATH_DATA="${SCRIPT_PARENT}/data"
 export PATH_DATA_LAST_PLAYBOOK="${PATH_DATA}/last_playbook"
 export PATH_DATA_LAST_TAGS="${PATH_DATA}/last_tags"
-export VERSION=3
+export VERSION=3.1
 export DEBUG=1
 export LOG=0
 

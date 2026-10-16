@@ -9,9 +9,12 @@
 
 function set_playbook_path {
 
+	# Trap SIGINT (CTRL+C)
+	local old_trap=$(trap -p SIGINT)
+    trap 'return 0' SIGINT
+
 	# ask user
 	local playbook_keyword=""
-	echo
 	echo -e "${CYAN}Enter playbook name:${CLEAR}"
 	echo -e "${GREY}Partial match is supported${CLEAR}"
 	echo -e "${GREY}Leave empty to list available playbooks${CLEAR}"
@@ -36,6 +39,13 @@ function set_playbook_path {
 				continue
 			fi
 		done
+	fi
+
+	# restore trap
+	if [[ -n "${old_trap}" ]]; then
+		eval "${old_trap}"
+	else
+		trap - SIGINT
 	fi
 
 	if [[ ! -f "${ANSIBLE_PLAYBOOK_PATH}" ]]; then
