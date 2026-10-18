@@ -54,9 +54,11 @@ function save_tag_list {
 
 	if [[ ${#tags_available[@]} -eq 0 ]]; then
 		echo "ERROR: Could not find any tags with playbook: ${ANSIBLE_PLAYBOOK_PATH} and inventory: ${ANSIBLE_INVENTORY_PATH}"
-		exit 1
+		return 1
 	else
-		printf "%s\n" "${tags_available[@]}" > ${out_path}
+		mapfile -t tags_available_sorted < <(printf '%s\n' "${tags_available[@]}" | sort)
+		printf "%s\n" "${tags_available_sorted[@]}" > ${out_path}
 		echo "Tag list saved to: ${out_path}"
+		return 0
 	fi
 }
