@@ -9,33 +9,54 @@
 # ----
 # - ANSIBLE_TAGS
 
-# SAVES
-# -----
+# WRITES TO
+# ---------
 # - out_path
 
 function save_tag_list {
 
-	local TAGS_AVAILABLE=()
-	local out_name=$(basename ${ANSIBLE_PLAYBOOK_PATH})
-	out_name="${out_name//.yml}" # remove .yml
+	local tags_available=()
+	local out_name=$(basename ${ANSIBLE_PLAYBOOK_PATH//.yml})
 	local out_path="${PATH_DATA}/tags.${out_name}"
 
 	# Get available tags
 	echo
 	echo -e "Searching for tags associated with playbook $(basename ${ANSIBLE_PLAYBOOK_PATH}) ${BLINKING}...${CLEAR}"
-	# Extracting TASK TAGS line
+	
+	# Get the playbook tags output
 	local output_list_tags=$(${ANSIBLE_PLAYBOOK_EXEC_PATH} --list-tags --inventory "${ANSIBLE_INVENTORY_PATH}" "${ANSIBLE_PLAYBOOK_PATH}")
-	# Removing the prefix and brackets
-	task_tags_line="${output_list_tags#*TASK TAGS: }" # Remove from the beginning until TASK TAGS: 
-	task_tags_line="${task_tags_line//[\[\]]/}" # Remove brackets
-	# Converting the string into an array using IFS
-	IFS=', ' read -r -a TAGS_AVAILABLE <<< "${task_tags_line}"
+	declare -A unique_tags=()
+	# Define the regex pattern in a variable to avoid syntax errors
+	local regex='TASK TAGS:[[:space:]]*\[(.*)\]'
 
-	if [[ ${#TAGS_AVAILABLE[@]} -eq 0 ]]; then
+	# Process the output line by line
+	while IFS= read -r line; do
+		# Check if the line contains TASK TAGS and capture the content inside the brackets
+		if [[ "${line}" =~ ${regex} ]]; then
+			local tags_str="${BASH_REMATCH[1]}"
+			
+			# Split the comma-separated tags into an array
+			IFS=',' read -ra split_tags <<< "$tags_str"
+			
+			for tag in "${split_tags[@]}"; do
+				# Trim leading/trailing whitespace
+				tag="${tag#"${tag%%[![:space:]]*}"}"
+				tag="${tag%"${tag##*[![:space:]]}"}"
+				
+				# Add to associative array to deduplicate
+				[[ -n "${tag}" ]] && unique_tags["${tag}"]=1
+			done
+		fi
+	done <<< "${output_list_tags}"
+
+	# Convert the unique keys back into an indexed array
+	local tags_available=("${!unique_tags[@]}")
+
+	if [[ ${#tags_available[@]} -eq 0 ]]; then
 		echo "ERROR: Could not find any tags with playbook: ${ANSIBLE_PLAYBOOK_PATH} and inventory: ${ANSIBLE_INVENTORY_PATH}"
 		exit 1
 	else
-		printf "%s\n" "${TAGS_AVAILABLE[@]}" > ${out_path}
+		printf "%s\n" "${tags_available[@]}" > ${out_path}
 		echo "Tag list saved to: ${out_path}"
 	fi
 }
