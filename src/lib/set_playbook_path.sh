@@ -37,8 +37,8 @@ function set_playbook_path {
 				echo -e "${index}) $(basename ${playbook_paths[${i}]})"
 			done
 			read -r -p ">> " choice
-
-			local playbook_path=${playbook_paths[${choice}]}
+			((choice=choice-1)) # align choice with zero-based array again
+			local playbook_path="${playbook_paths[${choice}]}"
 			
 			if [[ ${choice} =~ ^-?[0-9]+$ ]] && [[ -n ${playbook_path} ]]; then
 				ANSIBLE_PLAYBOOK_PATH="${playbook_path}"
@@ -63,6 +63,6 @@ function set_playbook_path {
 		return 1
 	else
 		echo "${ANSIBLE_PLAYBOOK_PATH}" > "${PATH_DATA_LAST_PLAYBOOK}"
-		echo "-> ${ANSIBLE_PLAYBOOK_PATH}"
+		echo -e "${GREY}-> ${ANSIBLE_PLAYBOOK_PATH}${CLEAR}"
 	fi
 }
