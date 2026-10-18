@@ -81,26 +81,39 @@ function set_tags {
 					this_query_matches+=("${tag}")
 				fi
 			done
+			
+			# sort
+			local this_query_matches_sorted=()
+			mapfile -t this_query_matches_sorted < <(printf '%s\n' "${this_query_matches[@]}" | sort)
 
 			# one match
-			if [[ ${#this_query_matches[@]} -eq 0 ]]; then
+			if [[ ${#this_query_matches_sorted[@]} -eq 0 ]]; then
 				echo
 				echo -e "${MAGENTA}'${query_tag}' not found among the following available tags:${CLEAR}\n${TAGS_AVAILABLE[@]}"
 				continue
-			elif [[ ${#this_query_matches[@]} -eq 1 ]]; then
-				matches+=("${this_query_matches[0]}")
-				echo "-> ${this_query_matches[0]}"
+			elif [[ ${#this_query_matches_sorted[@]} -eq 1 ]]; then
+				matches+=("${this_query_matches_sorted[0]}")
+				echo "-> ${this_query_matches_sorted[0]}"
 			else
 				echo
 				echo -e "${CYAN}Multiple matches found for '${query_tag}'. Select:${CLEAR}"
-				select choice in "${this_query_matches[@]}"; do
-					if [[ -z ${choice} ]]; then
-						echo -e "${MAGENTA}Invalid choice – try again.${CLEAR}"
-						continue
-					else
+				# menu
+				while true; do
+					for i in "${!this_query_matches_sorted[@]}"; do
+						local index=$((i + 1))
+						echo -e "${index}) ${this_query_matches_sorted[${i}]}"
+					done
+					read -r -p ">> " input
+					((input=input-1)) # align input with zero-based array again
+					local choice="${this_query_matches_sorted[${input}]}"
+					if [[ ${input} =~ ^-?[0-9]+$ ]] && [[ -n ${choice} ]]; then
 						matches+=("${choice}")
-						echo "-> ${choice}"
-						break
+				 		echo "-> ${choice}"
+				 		break
+					else
+						echo
+						echo -e "${MAGENTA}Invalid choice (${input}) - try again${CLEAR}"
+						continue		
 					fi
 				done
 			fi
