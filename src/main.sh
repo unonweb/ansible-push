@@ -54,7 +54,7 @@ source ${SCRIPT_DIR}/lib/set_inventory_path.sh
 function show_menu_tags {
 
 	local options=(
-		"Set" "Refresh List" "Return"
+		"Set" "Add" "Refresh List" "Return"
 	)
 
 	local default_choice=1
@@ -84,11 +84,16 @@ function show_menu_tags {
 			return
 			;;
 		2)
+			# Add
+			set_tags --add
+			return
+			;;
+		3)
 			# Refresh List
 			save_tag_list
 			return
 			;;
-		3)
+		4)
 			# Return
 			return
 			;;

@@ -1,3 +1,7 @@
+# ARGS
+# ----
+# --add
+
 # REQUIRES
 # --------
 # - ANSIBLE_INVENTORY_PATH
@@ -11,6 +15,8 @@
 # - ANSIBLE_TAGS
 
 function set_tags {
+
+	local mode="${1}"
 
 	local tags_query
 	local TAGS_AVAILABLE=()
@@ -43,12 +49,14 @@ function set_tags {
 	echo -e "${GREY}Leave empty to list available tags${CLEAR}"
 	read -p ">> " tags_query
 
+	local matches=()
+
 	# user inputs nothing
 	if [[ -z "${tags_query}" ]]; then
 		# show full list
 		select tag in "${TAGS_AVAILABLE[@]}"; do
 			if [ -n "${tag}" ]; then
-				ANSIBLE_TAGS="${tag}"
+				matches+=("${tag}")
 				echo "-> ${tag}"
 				break
 			else
@@ -66,7 +74,6 @@ function set_tags {
 		tags_query=${tags_query,,} # make lowercase
 		# Convert the comma-separated string into an array
 		local tags_query_array=()
-		local matches=()
 		local no_matches=()
 		IFS=',' read -ra tags_query_array <<< "${tags_query}"
 
@@ -118,26 +125,38 @@ function set_tags {
 				done
 			fi
 		done
+	fi
 
-		if [[ ${#matches[@]} -eq 0 ]]; then
-			# no match
-			echo -e "${MAGENTA}Could not find any matches. Please try again.${CLEAR}"
+	# handle matches
+	if [[ ${#matches[@]} -eq 0 ]]; then
+		# no match
+		echo -e "${MAGENTA}Could not find any matches. Please try again.${CLEAR}"
+		# repeat
+		set_tags
+	else
+		echo
+		if [[ "${mode}" == "--add" ]]; then
+			echo -e "${CYAN}Add the following tags?${CLEAR} (enter | any)"	
+		else
+			echo -e "${CYAN}Set the following tags?${CLEAR} (enter | any)"
+		fi		
+		printf -- '- %s\n' "${matches[@]}"
+		read -p ">> " confirm
+		if [[ -z ${confirm} ]]; then
+			# join tags to string
+			local joined
+			joined=$(printf '%s,' "${matches[@]}")
+			joined=${joined%,} # strip the trailing comma
+			if [[ "${mode}" == "--add" ]]; then
+				ANSIBLE_TAGS+=",${joined}"
+				ANSIBLE_TAGS=${ANSIBLE_TAGS#,} # strip the leading comma
+			else
+				ANSIBLE_TAGS="${joined}"
+			fi
+		else
+			echo -e "Restart."
 			# repeat
 			set_tags
-		else
-			echo
-			echo -e "${CYAN}Use the following tags?${CLEAR} (enter | any)"
-			printf -- '- %s\n' "${matches[@]}"
-			read -p ">> " confirm
-			if [[ -z ${confirm} ]]; then
-				joined=$(printf '%s,' "${matches[@]}")
-				joined=${joined%,}   # strip the trailing comma
-				ANSIBLE_TAGS="${joined}"
-			else
-				echo -e "Restart."
-				# repeat
-				set_tags
-			fi
 		fi
 	fi
 
