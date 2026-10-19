@@ -31,8 +31,15 @@ function main {
 		vault_id="${1}"
 	fi
 
+	# CHECKS
+	# ------
 	if [ -z "${vault_id}" ]; then
 		echo "Error: No vault-id specified." >&2
+		exit 1
+	fi
+
+	if [[ -z "${ANSIBLE_RAND_HEX}" ]]; then
+		echo "Error: ANSIBLE_RAND_HEX not set" >&2
 		exit 1
 	fi
 	
@@ -41,18 +48,27 @@ function main {
 		exit 1
 	fi
 
+	# MASTER PASS
+	# -----------
+	local master_pass
+	# Attempt silent decryption using the environment seed
+	master_pass=$(openssl enc -aes-256-cbc -pbkdf2 -d -in "${key_file}" -pass pass:"${ANSIBLE_RAND_HEX}" 2>/dev/null)
+	
+	if [[ -z "${master_pass}" ]]; then
+		echo "Error: Failed to decrypt '${key_file}'." >&2
+		exit 1
+	fi
+
+	# KEEPASS
+	# -------
 	local entry_path="${vault_id}"
 	if [ -n "${keepass_group}" ]; then
 		entry_path="${keepass_group}/${keepass_title_prefix} ${vault_id}"
 	fi
 
-	local user_pin
-	echo "Enter PIN:"
-	read -p ">> " -s user_pin
-	echo
-	local master_pass=$(cat "${key_file}" | openssl enc -d -aes-256-cbc -pbkdf2 -base64 -pass pass:"${user_pin}")
-	local secret=$(echo "${master_pass}" | keepassxc-cli show "${keepass_db_path}" "${entry_path}" -a password 2>/dev/null)
-
+	local secret
+	secret=$(echo "${master_pass}" | keepassxc-cli show "${keepass_db_path}" "${entry_path}" -a password 2>/dev/null)
+	
 	if [ -z "${secret}" ]; then
 		local matched_title=$(echo "${master_pass}" | keepassxc-cli search "${keepass_db_path}" "${vault_id}" 2>/dev/null | grep -i "${vault_id}" | head -n 1)
 		if [ -n "${matched_title}" ]; then
@@ -60,6 +76,8 @@ function main {
 		fi
 	fi
 
+	# RESULT
+	# ------
 	if [ -z "${secret}" ]; then
 		echo "Error: Could not retrieve password for entry '${entry_path}' from '${keepass_db_path}" >&2
 		exit 1
