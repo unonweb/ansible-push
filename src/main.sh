@@ -50,6 +50,7 @@ source ${SCRIPT_DIR}/lib/set_playbook_path.sh
 source ${SCRIPT_DIR}/lib/set_master_pw.sh
 source ${SCRIPT_DIR}/lib/log.sh
 source ${SCRIPT_DIR}/lib/debug.sh
+source ${SCRIPT_DIR}/lib/manage_vault_ids.sh
 source ${SCRIPT_DIR}/lib/set_inventory_path.sh
 
 function show_menu_tags {
@@ -236,13 +237,14 @@ function main {
 		"Playbook"
 		"Tags"
 		"Lint"
+		"Vault IDs"
 		"Run Ansible"
 		"Run Ansible (verbose)"
 		"Exit"
 	)
 
 	# Set 1-based index for default option (e.g., 4 = "Run Ansible")
-	local default_choice=4
+	local default_choice=5
 	local choice
 	
 	echo
@@ -312,6 +314,11 @@ function main {
 				show_menu_lint
 				;;
 			4)
+				# Vault IDs
+				# ---------
+				manage_vault_ids
+				;;
+			5)
 				# Run
 				# ---
 				echo
@@ -333,7 +340,7 @@ function main {
 					echo
 				fi
 				;;
-			5)
+			6)
 				# Run
 				# --- 
 				# (verbose)
@@ -342,7 +349,7 @@ function main {
 				
 				eval "${cmd} -v"
 				;;
-			6)
+			7)
 				# Exit
 				# ----
 				exit 0
