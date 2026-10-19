@@ -67,8 +67,12 @@ function _save_ansible_cfg {
 
 function _set_vault_method {
 	
-	# Scan for executable scripts in PATH_RUN
+	local mode
+	if [[ "${1}" == "--all" ]]; then
+		mode="all"
+	fi
 
+	# Scan for executable scripts in PATH_RUN
 	local scripts=()
 	for script in "${PATH_RUN}"/*; do
 		[[ -f "${script}" && -x "${script}" ]] && scripts+=("${script}")
@@ -80,15 +84,25 @@ function _set_vault_method {
 	
 	local options=(prompt ${scripts[@]})
 	echo
-	echo -e "${CYAN}Select lookup method for '${VAULT_ID_SELECTED}':${CLEAR}"
+	if [[ "${mode}" == "all" ]]; then
+		echo -e "${CYAN}Select lookup method for 'all':${CLEAR}"
+	else
+		echo -e "${CYAN}Select lookup method for '${VAULT_ID_SELECTED}':${CLEAR}"
+	fi
 	for i in "${!options[@]}"; do
 		local index=$((i + 1))
 		echo -e "${index}) $(basename ${options[${i}]})"
 	done
 	read -p ">> " input_lookup_method
 	local vault_method_selected="${options[$((input_lookup_method-1))]}"
-	echo "VAULT_ID_SELECTED: ${VAULT_ID_SELECTED}"
-	VAULT_ID_MAP["${VAULT_ID_SELECTED}"]="${vault_method_selected}"
+	
+	if [[ "${mode}" == "all" ]]; then
+		for key in ${!VAULT_ID_MAP[@]}; do 
+			VAULT_ID_MAP["${key}"]="${vault_method_selected}"
+		done
+	else
+		VAULT_ID_MAP["${VAULT_ID_SELECTED}"]="${vault_method_selected}"
+	fi
 }
 
 function _set_vault_map {
@@ -169,6 +183,7 @@ function manage_vault_ids {
             ((i++))
         done
 		echo "---"
+		echo -e "a) Set all at once"
 		echo -e "s) Save settings to ansible.cfg"
 		echo -e "q) Quit"
         read -p ">> " input_main_menu
@@ -179,6 +194,8 @@ function manage_vault_ids {
 			# Map the 1-based menu choice back to the 0-based keys array index
     		VAULT_ID_SELECTED="${VAULT_ID_MAP_KEYS[$((input_main_menu-1))]}"
 			_set_vault_method
+		elif [[ "${input_main_menu}" == "a" ]]; then
+			_set_vault_method --all
 		elif [[ "${input_main_menu}" == "s" ]]; then
 			_save_ansible_cfg
 		elif [[ "${input_main_menu}" == "q" ]]; then
