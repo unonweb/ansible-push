@@ -28,6 +28,7 @@ export BLINKING="\033[5m"
 export PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 export PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
 export PATH_DATA="${SCRIPT_PARENT}/data"
+export PATH_RUN="${SCRIPT_PARENT}/run"
 export PATH_DATA_LAST_PLAYBOOK="${PATH_DATA}/last_playbook"
 export PATH_DATA_LAST_TAGS="${PATH_DATA}/last_tags"
 export VERSION=261019
@@ -174,8 +175,10 @@ function main {
 	ANSIBLE_TAGS=""
 	ANSIBLE_EXEC_PATH=$(which ansible)
 	ANSIBLE_PLAYBOOK_EXEC_PATH=$(which ansible-playbook)
-	
 	ANSIBLE_CONFIG_PATH="${ANSIBLE_REPO_PATH}/ansible.cfg"
+
+	# CHMOD
+	chmod u=rwx,g=,o= ${PATH_RUN}/*
 
 	# CHECK exec path
 	if [[ -z "${ANSIBLE_PLAYBOOK_EXEC_PATH}" ]]; then
