@@ -22,16 +22,18 @@ function main {
 	local keepass_title_prefix="${VAULTS_KEEPASS_TITLE_PREFIX}"
 	local key_file="${XDG_RUNTIME_DIR:-${HOME}/.cache}/${VAULTS_MASTER_PW_FILE_NAME}"
 
+	local vault_id=""
+	if [[ "${1}" == "--vault-id" ]]; then
+		# this is the way ansible calls this script
+		vault_id="${2}"
+	elif [[ -n "${1}" ]]; then
+		# this not
+		vault_id="${1}"
+	fi
+
 	if [ ! -f "${key_file}" ]; then
 		echo "Error: No key found at: ${key_file}" >&2
 		exit 1
-	fi
-
-	local vault_id=""
-	if [[ "${1}" == "--vault-id" ]]; then
-		vault_id="${2}"
-	elif [[ -n "${1}" ]]; then
-		vault_id="${1}"
 	fi
 
 	if [ -z "${vault_id}" ]; then
