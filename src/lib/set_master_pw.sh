@@ -19,7 +19,13 @@ function set_master_pw {
 		local master_pw
 		read -rs -p "Enter Master Password: " master_pw
 		echo ""
-		echo -n "${master_pw}" > "${MASTER_PW_FILE}"
+		#echo -n "${master_pw}" > "${MASTER_PW_FILE}"
+		echo "Enter a PIN to protect it: "
+		echo "(This will be asked every time you run Ansible)"
+		local user_pin
+		read -p ">> " -s user_pin
+		echo
+		echo -n "${master_pw}" | openssl enc -aes-256-cbc -salt -pbkdf2 -base64 -pass pass:"${user_pin}" > "${MASTER_PW_FILE}"
 		chmod 600 "${MASTER_PW_FILE}"
 	fi
 }

@@ -27,8 +27,6 @@ function main {
 		exit 1
 	fi
 
-	local master_pass=$(cat "${key_file}")
-	
 	local vault_id=""
 	if [[ "${1}" == "--vault-id" ]]; then
 		vault_id="${2}"
@@ -46,7 +44,11 @@ function main {
 		entry_path="${keepass_group}/${keepass_title_prefix} ${vault_id}"
 	fi
 
-	# --key-file "${key_file}"
+	local user_pin
+	echo "Enter PIN:"
+	read -p ">> " -s user_pin
+	echo
+	local master_pass=$(cat "${key_file}" | openssl enc -d -aes-256-cbc -pbkdf2 -base64 -pass pass:"${user_pin}")
 	local secret=$(echo "${master_pass}" | keepassxc-cli show "${keepass_db_path}" "${entry_path}" -a password 2>/dev/null)
 
 	if [ -z "${secret}" ]; then
