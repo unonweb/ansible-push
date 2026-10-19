@@ -31,13 +31,13 @@ function main {
 		vault_id="${1}"
 	fi
 
-	if [ ! -f "${key_file}" ]; then
-		echo "Error: No key found at: ${key_file}" >&2
-		exit 1
-	fi
-
 	if [ -z "${vault_id}" ]; then
 		echo "Error: No vault-id specified." >&2
+		exit 1
+	fi
+	
+	if [ ! -f "${key_file}" ]; then
+		echo "Error: No key found at: ${key_file}" >&2
 		exit 1
 	fi
 
