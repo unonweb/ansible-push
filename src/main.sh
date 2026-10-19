@@ -324,6 +324,12 @@ function main {
 				echo
 				set_master_pw
 
+				if [[ -n "${ANSIBLE_RAND_HEX}" ]]; then
+					cmd="ANSIBLE_RAND_HEX='${ANSIBLE_RAND_HEX}' ${cmd}"
+				else
+					echo "ANSIBLE_RAND_HEX not set"
+				fi
+
 				# PRINT
 				echo
 				echo -e "${CYAN}Running Ansible Playbook "${ANSIBLE_PLAYBOOK_PATH}" with tags${CLEAR}: ${BOLD}${ANSIBLE_TAGS}${CLEAR} ..."
