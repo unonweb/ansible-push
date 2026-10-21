@@ -11,7 +11,7 @@ PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 # REQUIRES:
 # ---------
 # - VAULTS_KEEPASS_DB_PATH
-# - VAULTS_KEEPASS_GROUP
+# - VAULTS_KEEPASS_GROUP_PATH
 # - VAULTS_KEEPASS_TITLE_PREFIX
 # - VAULTS_MASTER_PW_FILE_NAME
 
@@ -71,8 +71,8 @@ function main {
 	# KEEPASS
 	# -------
 	local entry_path="${vault_id}"
-	if [ -n "${VAULTS_KEEPASS_GROUP}" ]; then
-		entry_path="${VAULTS_KEEPASS_GROUP}/${VAULTS_KEEPASS_TITLE_PREFIX} ${vault_id}"
+	if [ -n "${VAULTS_KEEPASS_GROUP_PATH}" ]; then
+		entry_path="${VAULTS_KEEPASS_GROUP_PATH}/${VAULTS_KEEPASS_TITLE_PREFIX} ${vault_id}"
 	fi
 
 	local secret
