@@ -26,12 +26,18 @@ function main {
 
 	local vault_id=""
 	if [[ "${1}" == "--vault-id" ]]; then
-		# this is the way ansible calls this script
+		# Case 1: --vault-id value
 		vault_id="${2}"
+	elif [[ "${1}" == --vault-id=* ]]; then
+		# Case 2: --vault-id=value
+		vault_id="${1#*=}"
 	elif [[ -n "${1}" ]]; then
-		# this not
+		# Case 3: value
 		vault_id="${1}"
 	fi
+
+	# Discard everything from the '@' character onwards
+	vault_id="${vault_id%@*}"
 
 	if [[ -z "${VAULTS_MASTER_PW_FILE_NAME}" ]]; then
 		echo "Error: VAULTS_MASTER_PW_FILE_NAME empty" >&2
@@ -92,6 +98,9 @@ function main {
 
 	# RESULT
 	# ------
+	# log:
+	# echo -e "\n---\nnentry_path: ${entry_path}\nvault_id: ${vault_id}\nkey_file: ${key_file}" >> "${SCRIPT_PARENT}/log.txt"
+
 	if [ -z "${secret}" ]; then
 		echo "Error: Could not retrieve secret for vault-id '${vault_id}' & entry '${entry_path}' from '${VAULTS_KEEPASS_DB_PATH}" >&2
 		exit 1
