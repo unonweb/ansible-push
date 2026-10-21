@@ -253,12 +253,20 @@ function main {
 	echo -ne "${CLEAR}"
 	while true; do
 
+		TARGET_HOSTS=$("${SCRIPT_DIR}/lib/parse_hosts.py" "${ANSIBLE_PLAYBOOK_PATH}")
+
 		# SET cmd
 		local cmd="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
 		cmd+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
 		cmd+=" --tags ${ANSIBLE_TAGS}"
+		cmd+=" --vault-id=all@/home/udo/franzk/it/code/bash/un.ansible-push/run/vault-lookup-keepassxc-client.sh"
+		for host in "${TARGET_HOSTS[@]}"; do
+			cmd+=" --vault-id=${host}@/home/udo/franzk/it/code/bash/un.ansible-push/run/vault-lookup-keepassxc-client.sh"
+		done
+
 		cmd+=" ${ANSIBLE_PLAYBOOK_PATH}"
-		# SET env
+		
+		# PREPEND env
 		if [[ -f "${ANSIBLE_CONFIG_PATH}" ]]; then
 			cmd="ANSIBLE_CONFIG='${ANSIBLE_CONFIG_PATH}' ${cmd}"
 		else
@@ -269,12 +277,10 @@ function main {
 		# echo -e "Inventory: ${GREEN}${ANSIBLE_INVENTORY_PATH}${CLEAR}"
 		local playbook_name=$(basename ${ANSIBLE_PLAYBOOK_PATH})
 
-		TARGET_HOSTS=$("${SCRIPT_DIR}/lib/parse_hosts.py" "${ANSIBLE_PLAYBOOK_PATH}")
-
 		# PRINT version
 		echo "-------------------------------"
 		echo -e "Playbook:  ${GREEN}${playbook_name}${CLEAR}"
-		echo -e "Hosts:		${GREEN}${TARGET_HOSTS[@]}${CLEAR}"
+		echo -e "Hosts:     ${GREEN}${TARGET_HOSTS[@]}${CLEAR}"
 		echo -e "Tags:      ${GREEN}${ANSIBLE_TAGS}${CLEAR}"
 		echo "-------------------------------"
 		echo
