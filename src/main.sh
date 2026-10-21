@@ -31,7 +31,7 @@ export PATH_DATA="${SCRIPT_PARENT}/data"
 export PATH_RUN="${SCRIPT_PARENT}/run"
 export PATH_DATA_LAST_PLAYBOOK="${PATH_DATA}/last_playbook"
 export PATH_DATA_LAST_TAGS="${PATH_DATA}/last_tags"
-export VERSION=261019
+export VERSION=261021
 export DEBUG=1
 export LOG=0
 
