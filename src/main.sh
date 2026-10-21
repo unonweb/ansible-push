@@ -268,10 +268,13 @@ function main {
 		# overview
 		# echo -e "Inventory: ${GREEN}${ANSIBLE_INVENTORY_PATH}${CLEAR}"
 		local playbook_name=$(basename ${ANSIBLE_PLAYBOOK_PATH})
-		
+
+		TARGET_HOSTS=$("${SCRIPT_DIR}/lib/parse_hosts.py" "${ANSIBLE_PLAYBOOK_PATH}")
+
 		# PRINT version
 		echo "-------------------------------"
 		echo -e "Playbook:  ${GREEN}${playbook_name}${CLEAR}"
+		echo -e "Hosts:		${GREEN}${TARGET_HOSTS[@]}${CLEAR}"
 		echo -e "Tags:      ${GREEN}${ANSIBLE_TAGS}${CLEAR}"
 		echo "-------------------------------"
 		echo
