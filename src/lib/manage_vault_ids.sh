@@ -150,7 +150,8 @@ function _set_vault_map {
     done < "${ANSIBLE_CONFIG_PATH}"
 
 	if [[ ${#VAULT_ID_MAP_KEYS[@]} -eq 0 ]]; then
-        echo "No vault identities found in ${ANSIBLE_CONFIG_PATH}."
+		echo
+        echo "ERROR: No vault identities found in ${ANSIBLE_CONFIG_PATH}."
         return 1
     fi
 }
@@ -171,7 +172,7 @@ function manage_vault_ids {
     declare -A VAULT_ID_MAP
 	declare -a VAULT_ID_MAP_KEYS
 
-    _set_vault_map
+    _set_vault_map || return 1
 
     # Menu
     while true; do
