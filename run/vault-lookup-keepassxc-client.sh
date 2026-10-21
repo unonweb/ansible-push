@@ -24,8 +24,6 @@ function main {
 		exit 1
 	fi
 
-	local key_file="${XDG_RUNTIME_DIR:-${HOME}/.cache}/${VAULTS_MASTER_PW_FILE_NAME}"
-
 	local vault_id=""
 	if [[ "${1}" == "--vault-id" ]]; then
 		# this is the way ansible calls this script
@@ -34,6 +32,13 @@ function main {
 		# this not
 		vault_id="${1}"
 	fi
+
+	if [[ -z "${VAULTS_MASTER_PW_FILE_NAME}" ]]; then
+		echo "Error: VAULTS_MASTER_PW_FILE_NAME empty" >&2
+		exit 1
+	fi
+
+	local key_file="${XDG_RUNTIME_DIR:-${HOME}/.cache}/${VAULTS_MASTER_PW_FILE_NAME}"
 
 	# CHECKS
 	# ------
@@ -53,7 +58,7 @@ function main {
 	fi
 	
 	if [ ! -f "${key_file}" ]; then
-		echo "Error: No key found at: ${key_file}" >&2
+		echo "Error: No key file found at: ${key_file}" >&2
 		exit 1
 	fi
 
@@ -88,7 +93,7 @@ function main {
 	# RESULT
 	# ------
 	if [ -z "${secret}" ]; then
-		echo "Error: Could not retrieve password for entry '${entry_path}' from '${VAULTS_KEEPASS_DB_PATH}" >&2
+		echo "Error: Could not retrieve secret for vault-id '${vault_id}' & entry '${entry_path}' from '${VAULTS_KEEPASS_DB_PATH}" >&2
 		exit 1
 	fi
 
