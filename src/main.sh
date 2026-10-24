@@ -63,7 +63,7 @@ function main {
 			return 1
 		fi
 		# Use XDG_RUNTIME_DIR (RAM-backed tmpfs, strictly 0700 perms)
-		MASTER_PW_FILE="${XDG_RUNTIME_DIR:-${HOME}/.cache}/${VAULTS_MASTER_PW_FILE_NAME}"
+		MASTER_PW_FILE="${XDG_RUNTIME_DIR}/${VAULTS_MASTER_PW_FILE_NAME}"
 
 		# Automatically wipe the key file from RAM when the wrapper exits
 		trap 'rm -f "${MASTER_PW_FILE}"' EXIT
@@ -149,19 +149,36 @@ function main {
 	echo -ne "${CLEAR}"
 	while true; do
 
-		TARGET_HOSTS=(
+		local target_hosts=(
 			$("${SCRIPT_DIR}/lib/parse_hosts.py" "${ANSIBLE_PLAYBOOK_PATH}")
 		)
+
+		local vault_ids=(
+			${target_hosts[@]} 
+			all
+		)
+
+		local vault_id_flags=()
+		if [[ -f "${PATH_STATE_VAULT_MAP}" ]]; then
+			# sets VAULT_MAP_ID_TO_METHOD
+			source "${PATH_STATE_VAULT_MAP}"
+		else
+			declare -A VAULT_MAP_ID_TO_METHOD
+		fi
+
+		for id in "${vault_ids[@]}"; do
+			local method="prompt"
+			if [[ -v VAULT_MAP_ID_TO_METHOD["${id}"] ]]; then
+				method="${VAULT_MAP_ID_TO_METHOD["${id}"]}"
+			fi
+			vault_id_flags+=("--vault-id=${id}@${method}")
+		done
 
 		# SET cmd
 		local cmd="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
 		cmd+=" --inventory=${ANSIBLE_INVENTORY_PATH}"
 		cmd+=" --tags ${ANSIBLE_TAGS}"
-		cmd+=" --vault-id=all@/home/udo/franzk/it/code/bash/un.ansible-push/run/vault-lookup-keepassxc-client.sh"
-		for host in "${TARGET_HOSTS[@]}"; do
-			cmd+=" --vault-id=${host}@/home/udo/franzk/it/code/bash/un.ansible-push/run/vault-lookup-keepassxc-client.sh"
-		done
-
+		cmd+=" ${vault_id_flags[@]}"
 		cmd+=" ${ANSIBLE_PLAYBOOK_PATH}"
 		
 		# PREPEND env
@@ -178,7 +195,8 @@ function main {
 		# PRINT version
 		echo "-------------------------------"
 		echo -e "Playbook:  ${GREEN}${playbook_name}${CLEAR}"
-		echo -e "Hosts:     ${GREEN}${TARGET_HOSTS[@]}${CLEAR}"
+		echo -e "Hosts:     ${GREEN}${target_hosts[@]}${CLEAR}"
+		echo -e "Vault IDs: ${GREEN}${vault_ids[@]}${CLEAR}"
 		echo -e "Tags:      ${GREEN}${ANSIBLE_TAGS}${CLEAR}"
 		echo "-------------------------------"
 		echo
@@ -223,7 +241,7 @@ function main {
 			4)
 				# Vault IDs
 				# ---------
-				map_vault_id_to_method
+				map_vault_id_to_method ${vault_ids[@]}
 				;;
 			5)
 				# Run

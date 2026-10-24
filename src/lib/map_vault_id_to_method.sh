@@ -1,7 +1,3 @@
-# REQUIRES
-# --------
-# - TARGET_HOSTS
-
 function _set_vault_method { # ${id_selected}
 
 	# REQUIRES
@@ -52,16 +48,32 @@ function _set_vault_method { # ${id_selected}
 	fi
 }
 
-function map_vault_id_to_method {
+# REQUIRES
+# --------
+# - PATH_STATE_VAULT_MAP
 
-    if [[ -z "${TARGET_HOSTS}" || "${#TARGET_HOSTS[@]}" -eq 0 ]]; then
-        echo "Error: TARGET_HOSTS not set." >&2
+# SETS
+# ----
+# - VAULT_MAP_ID_TO_METHOD
+
+function map_vault_id_to_method { #${vault_ids[@]}
+
+	# args
+	local vault_ids=(${@})
+	local rc
+	
+	# checks
+    if [[ ${#vault_ids[@]} -eq 0 ]]; then
+        echo "Error: No vault ids provided" >&2
         return 1
     fi
 
-	local rc
+	if [[ -z ${PATH_STATE_VAULT_MAP} ]]; then
+        echo "Error: Var not set: PATH_STATE_VAULT_MAP" >&2
+        return 1
+    fi
 
-	# Trap SIGINT (CTRL+C)
+	# trap
 	local old_trap=$(trap -p SIGINT)
     trap 'return 0' SIGINT
 
@@ -72,7 +84,7 @@ function map_vault_id_to_method {
 	fi
 
 	local method_default="prompt"
-	for host in "${TARGET_HOSTS[@]}"; do
+	for host in "${vault_ids[@]}"; do
 		if [[ ! -v VAULT_MAP_ID_TO_METHOD["${host}"] ]]; then
 			VAULT_MAP_ID_TO_METHOD["${host}"]="${method_default}"
 		fi

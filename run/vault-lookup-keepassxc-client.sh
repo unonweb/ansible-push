@@ -44,7 +44,7 @@ function main {
 		exit 1
 	fi
 
-	local key_file="${XDG_RUNTIME_DIR:-${HOME}/.cache}/${VAULTS_MASTER_PW_FILE_NAME}"
+	local key_file="${XDG_RUNTIME_DIR}/${VAULTS_MASTER_PW_FILE_NAME}"
 
 	# CHECKS
 	# ------
