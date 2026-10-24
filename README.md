@@ -1,34 +1,27 @@
 ASSUMPTIONS
 ===========
 
-Only one playbook may be executed at once.
+- Only one playbook may be executed at once
 
-Ansible Vaults
---------------
+VAULTS
+======
 
-The association of **vault-ids** and the password lookup method must be specified in `ansible.cfg`!
+It is assumed that one vault-id is used for each host. 
+Therefore `--vault-id` flags for each host are added to the cmdline.
+Another vault-id `all` is added, too.
+More group vault-ids are currently not implemented as I dont use them.
 
-Example:
-```yml
-vault_identity_list = 
-	vault-id-a@/path/to/lookup/script-client.sh,
-	vault-id-b@prompt
-```
-
-Included lookup scripts
------------------------
-
-- KeepassXC: `run/vault-lookup-keepassxc-client.sh`
-
-Use in your `ansible.cfg` with:
-```yml
-vault_identity_list = vault-id-a@/dest/path/to/vault-lookup-keepassxc-client.sh.sh
-```
-
+The association of vault-ids and decryption methods may be managed from inside the script.
+There are some lookup scripts included in run/ directory. 
+They may be easily extended by placing others scripts (with `-client` suffix) inside this directory.
+Then they may be associated with vault-ids from inside the script.
 
 Attention!
-If `VAULTS_USE_MASTER_PW_FOR_VAULT_PW_LOOKUP=1` is set, then a password for a keyring/database is asked and saved to `${XDG_RUNTIME_DIR}` or `${HOME}/.cache`. 
-This pw is then used by the lookup script to get the vault pws for different vault-ids.
+If `VAULTS_USE_MASTER_PW_FOR_VAULT_PW_LOOKUP=1` is set, 
+then a password for a keyring/database is asked and saved in encrypted form to `${XDG_RUNTIME_DIR}/${VAULTS_MASTER_PW_FILE_NAME}`.
+It is intended to be used by a lookup script to get the vault pws for different vault-ids automatically.
+The seed to encrypt the pw is passed to the lookup script as environment variable, which is not a safe method!
+On exit or abort the script removes the file.
 
 Custom lookup scripts
 ---------------------
