@@ -7,7 +7,7 @@
 # - ANSIBLE_INVENTORY_PATH
 # - ANSIBLE_PLAYBOOK_PATH
 # - ANSIBLE_PLAYBOOK_EXEC_PATH
-# - PATH_DATA
+# - PATH_STATE
 # - save_tag_list
 
 # SETS
@@ -22,7 +22,7 @@ function set_tags {
 	local TAGS_AVAILABLE=()
 	local out_name=$(basename ${ANSIBLE_PLAYBOOK_PATH})
 	out_name="${out_name//.yml}" # remove .yml
-	local out_path="${PATH_DATA}/tags.${out_name}"
+	local out_path="${PATH_STATE}/tags.${out_name}"
 	local run_tag_extraction=true
 
 	local old_trap=$(trap -p SIGINT)
@@ -168,7 +168,7 @@ function set_tags {
 	fi
 
 	if [[ -n ${ANSIBLE_TAGS} ]]; then
-		echo "${ANSIBLE_TAGS}" > "${PATH_DATA_LAST_TAGS}"
+		echo "${ANSIBLE_TAGS}" > "${PATH_STATE_LAST_TAGS}"
 		return 0
 	else
 		echo "ERROR: ANSIBLE_TAGS not set!"

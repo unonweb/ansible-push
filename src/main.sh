@@ -27,11 +27,12 @@ export BLINKING="\033[5m"
 # -----------------
 export PATH_CONFIG="${SCRIPT_PARENT}/config.cfg"
 export PATH_DEFAULTS="${SCRIPT_DIR}/defaults.cfg"
-export PATH_DATA="${SCRIPT_PARENT}/data"
 export PATH_RUN="${SCRIPT_PARENT}/run"
-export PATH_DATA_LAST_PLAYBOOK="${PATH_DATA}/last_playbook"
-export PATH_DATA_LAST_TAGS="${PATH_DATA}/last_tags"
-export VERSION=261021
+export PATH_STATE="${SCRIPT_PARENT}/state"
+export PATH_STATE_LAST_PLAYBOOK="${PATH_STATE}/last_playbook"
+export PATH_STATE_LAST_TAGS="${PATH_STATE}/last_tags"
+export PATH_STATE_VAULT_MAP="${PATH_STATE}/vault_id_map"
+export VERSION=261024
 export DEBUG=1
 export LOG=0
 
@@ -49,115 +50,10 @@ source ${SCRIPT_DIR}/lib/set_tags.sh
 source ${SCRIPT_DIR}/lib/set_playbook_path.sh
 source ${SCRIPT_DIR}/lib/set_master_pw.sh
 source ${SCRIPT_DIR}/lib/log.sh
-source ${SCRIPT_DIR}/lib/debug.sh
-source ${SCRIPT_DIR}/lib/manage_vault_ids.sh
+source ${SCRIPT_DIR}/lib/map_vault_id_to_method.sh
 source ${SCRIPT_DIR}/lib/set_inventory_path.sh
-
-function show_menu_tags {
-
-	local options=(
-		"Set" "Add" "Refresh List" "Return"
-	)
-
-	local default_choice=1
-	local choice
-
-	echo -e "${UNDERLINE}Edit Tags${CLEAR}"
-	for i in "${!options[@]}"; do
-		local index=$((i + 1))
-		if [[ ${index} -eq ${default_choice} ]]; then
-			#printf "%d) %s [default]\n" "${index}" "${options[${i}]}"
-			echo -e "${BOLD}${index}) ${options[${i}]}${CLEAR}"
-		else
-			# printf "%d) %s\n" "${index}" "${options[${i}]}"
-			echo -e "${index}) ${options[${i}]}"
-		fi
-	done
-
-	read -r -p ">> " choice
-	
-	# If user pressed Enter, use the default
-	choice="${choice:-${default_choice}}"
-
-	case "${choice}" in
-		1)
-			# Set
-			set_tags
-			return
-			;;
-		2)
-			# Add
-			set_tags --add
-			return
-			;;
-		3)
-			# Refresh List
-			save_tag_list
-			return
-			;;
-		4)
-			# Return
-			return
-			;;
-	esac
-}
-
-function show_menu_lint {
-
-	# REQUIRES
-	# --------
-	# - ANSIBLE_PLAYBOOK_PATH
-	# - ANSIBLE_REPO_PATH
-
-	local ansible_lint_config_path="${ANSIBLE_REPO_PATH}/.ansible-lint.yml"
-	local profiles=(
-		"min" "basic" "moderate" "safety" "shared" "production"
-	)
-	local default_choice=2
-	local choice
-
-	if ! which ansible-lint &> /dev/null; then
-		echo "ERROR: ansible-lint cmd not found. Install into 'ansible' venv with:"
-		echo "pipx inject --force --include-apps ansible ansible-lint"
-		return 1
-	fi
-
-	# Trap SIGINT (CTRL+C)
-	local old_trap=$(trap -p SIGINT)
-    trap 'return 0' SIGINT
-
-	if [[ ! -f "${ansible_lint_config_path}" ]]; then
-		echo "WARN: File does not exist: ${ansible_lint_config_path}"
-	fi
-
-	echo -e "${GREY}Config: ${ansible_lint_config_path}${CLEAR}"
-	echo
-	echo -e "${UNDERLINE}Choose Profile${CLEAR}"
-	for i in "${!profiles[@]}"; do
-		local index=$((i + 1))
-		if [[ ${index} -eq ${default_choice} ]]; then
-			echo -e "${BOLD}${index}) ${profiles[${i}]}${CLEAR}"
-		else
-			echo -e "${index}) ${profiles[${i}]}"
-		fi
-	done
-
-	read -r -p ">> " choice
-	
-	# If user pressed Enter, use the default
-	choice="${choice:-${default_choice}}"
-
-	local profile=${profiles[${choice}]}
-
-	ansible-lint --config-file "${ansible_lint_config_path}" --profile=${profile} --force-color --fix=yaml "${ANSIBLE_PLAYBOOK_PATH}"
-
-	# restore trap
-	if [[ -n "${old_trap}" ]]; then
-		eval "${old_trap}"
-	else
-		trap - SIGINT
-	fi
-}
+source ${SCRIPT_DIR}/lib/menu_tags.sh
+source ${SCRIPT_DIR}/lib/menu_lint.sh
 
 function main {
 
@@ -204,8 +100,8 @@ function main {
 	fi
 
 	# MKDIR data
-	if [[ ! -d "${PATH_DATA}" ]]; then
-		mkdir "${PATH_DATA}"
+	if [[ ! -d "${PATH_STATE}" ]]; then
+		mkdir "${PATH_STATE}"
 	fi
 	
 	# CHECK repo path
@@ -219,15 +115,15 @@ function main {
 	set_inventory_path
 
 	# INIT playbook
-	if [[ -f "${PATH_DATA_LAST_PLAYBOOK}" ]]; then
-		ANSIBLE_PLAYBOOK_PATH=$(< "${PATH_DATA_LAST_PLAYBOOK}")
+	if [[ -f "${PATH_STATE_LAST_PLAYBOOK}" ]]; then
+		ANSIBLE_PLAYBOOK_PATH=$(< "${PATH_STATE_LAST_PLAYBOOK}")
 	else
 		set_playbook_path
 	fi
 
 	# INIT tags
-	if [[ -f "${PATH_DATA_LAST_TAGS}" ]]; then
-		ANSIBLE_TAGS=$(< "${PATH_DATA_LAST_TAGS}")
+	if [[ -f "${PATH_STATE_LAST_TAGS}" ]]; then
+		ANSIBLE_TAGS=$(< "${PATH_STATE_LAST_TAGS}")
 	else
 		set_tags
 	fi
@@ -253,7 +149,9 @@ function main {
 	echo -ne "${CLEAR}"
 	while true; do
 
-		TARGET_HOSTS=$("${SCRIPT_DIR}/lib/parse_hosts.py" "${ANSIBLE_PLAYBOOK_PATH}")
+		TARGET_HOSTS=(
+			$("${SCRIPT_DIR}/lib/parse_hosts.py" "${ANSIBLE_PLAYBOOK_PATH}")
+		)
 
 		# SET cmd
 		local cmd="${ANSIBLE_PLAYBOOK_EXEC_PATH}"
@@ -314,18 +212,18 @@ function main {
 				# Tags
 				# ----
 				echo
-				show_menu_tags
+				menu_tags
 				;;
 			3)
 				# Lint
 				# ----
 				echo
-				show_menu_lint
+				menu_lint
 				;;
 			4)
 				# Vault IDs
 				# ---------
-				manage_vault_ids
+				map_vault_id_to_method
 				;;
 			5)
 				# Run

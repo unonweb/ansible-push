@@ -1,7 +1,7 @@
 # REQUIRES
 # --------
 # - ANSIBLE_REPO_PATH
-# - PATH_DATA_LAST_PLAYBOOK
+# - PATH_STATE_LAST_PLAYBOOK
 
 # SETS
 # ----
@@ -62,7 +62,7 @@ function set_playbook_path {
 		echo "Playbook path not found: ${ANSIBLE_PLAYBOOK_PATH}"
 		return 1
 	else
-		echo "${ANSIBLE_PLAYBOOK_PATH}" > "${PATH_DATA_LAST_PLAYBOOK}"
+		echo "${ANSIBLE_PLAYBOOK_PATH}" > "${PATH_STATE_LAST_PLAYBOOK}"
 		echo -e "${GREY}-> ${ANSIBLE_PLAYBOOK_PATH}${CLEAR}"
 	fi
 }

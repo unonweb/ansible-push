@@ -3,7 +3,7 @@
 # - ANSIBLE_INVENTORY_PATH
 # - ANSIBLE_PLAYBOOK_PATH
 # - ANSIBLE_PLAYBOOK_EXEC_PATH
-# - PATH_DATA
+# - PATH_STATE
 
 # SETS
 # ----
@@ -17,7 +17,7 @@ function save_tag_list {
 
 	local tags_available=()
 	local out_name=$(basename ${ANSIBLE_PLAYBOOK_PATH//.yml})
-	local out_path="${PATH_DATA}/tags.${out_name}"
+	local out_path="${PATH_STATE}/tags.${out_name}"
 
 	# Get available tags
 	echo
@@ -59,6 +59,7 @@ function save_tag_list {
 		mapfile -t tags_available_sorted < <(printf '%s\n' "${tags_available[@]}" | sort)
 		printf "%s\n" "${tags_available_sorted[@]}" > ${out_path}
 		echo "Tag list saved to: ${out_path}"
+		echo
 		return 0
 	fi
 }
