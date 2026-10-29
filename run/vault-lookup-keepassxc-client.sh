@@ -96,11 +96,22 @@ function main {
 		fi
 	fi
 
-	# RESULT
-	# ------
-	# log:
-	# echo -e "\n---\nnentry_path: ${entry_path}\nvault_id: ${vault_id}\nkey_file: ${key_file}" >> "${SCRIPT_PARENT}/log.txt"
+	# LOG
+	# ---
+	LOG=1
+	if ((LOG)); then
+		echo -e \
+"\n---\n\
+PATH_CONFIG: ${PATH_CONFIG}\n\
+VAULTS_KEEPASS_TITLE_PREFIX: ${VAULTS_KEEPASS_TITLE_PREFIX}\n\
+VAULTS_KEEPASS_GROUP_PATH: ${VAULTS_KEEPASS_GROUP_PATH}\n\
+entry_path: ${entry_path}\n\
+vault_id: ${vault_id}\n\
+key_file: ${key_file}" >> "${SCRIPT_PARENT}/log.txt"
+	fi
 
+	# RESULT
+	# ------	
 	if [ -z "${secret}" ]; then
 		echo "Error: Could not retrieve secret for vault-id '${vault_id}' & entry '${entry_path}' from '${VAULTS_KEEPASS_DB_PATH}" >&2
 		exit 1
