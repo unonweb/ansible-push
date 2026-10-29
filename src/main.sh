@@ -32,7 +32,7 @@ export PATH_STATE="${SCRIPT_PARENT}/state"
 export PATH_STATE_LAST_PLAYBOOK="${PATH_STATE}/last_playbook"
 export PATH_STATE_LAST_TAGS="${PATH_STATE}/last_tags"
 export PATH_STATE_VAULT_MAP="${PATH_STATE}/vault_id_map"
-export VERSION=261024
+export VERSION=261029
 export DEBUG=1
 export LOG=0
 
