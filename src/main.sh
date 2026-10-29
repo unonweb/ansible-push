@@ -171,7 +171,7 @@ function main {
 			if [[ -v VAULT_MAP_ID_TO_METHOD["${id}"] ]]; then
 				method="${VAULT_MAP_ID_TO_METHOD["${id}"]}"
 			fi
-			vault_id_flags+=("--vault-id=${id}@${method}")
+			vault_id_flags+=("--vault-id ${id}@${method}")
 		done
 
 		# SET cmd
