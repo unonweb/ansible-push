@@ -8,6 +8,7 @@ VAULTS
 
 It is assumed that one vault-id is used for each host. 
 Therefore `--vault-id` flags for each host are added to the cmdline.
+If a host does not have a vault, Ansible will log a warning, but proceed.
 Another vault-id `all` is added, too.
 More group vault-ids are currently not implemented as I dont use them.
 
@@ -23,8 +24,16 @@ It is intended to be used by a lookup script to get the vault pws for different 
 The seed to encrypt the pw is passed to the lookup script as environment variable, which is not a safe method!
 On exit or abort the script removes the file.
 
-Custom lookup scripts
----------------------
+Lookup scripts
+--------------
+
+### vault-lookup-keepassxc-client.sh
+
+The group path has to be relative to /root/
+/root/ansible -> ansible
+/root/ansible/vaults -> ansible/vaults
+
+### Custom lookup scripts
 
 Note the following official requirements to vault lookup scripts:
 
