@@ -194,7 +194,7 @@ function main {
 
 		# PRINT version
 		echo "-------------------------------"
-		echo -e "Playbook:  ${GREEN}${playbook_name}${CLEAR}"
+		echo -e "${BOLD}Playbook:${CLEAR}  ${GREEN}${BOLD}${playbook_name}${CLEAR}"
 		echo -e "Hosts:     ${GREEN}${target_hosts[@]}${CLEAR}"
 		echo -e "Vault IDs: ${GREEN}${vault_ids[@]}${CLEAR}"
 		echo -e "Tags:      ${GREEN}${ANSIBLE_TAGS}${CLEAR}"
