@@ -32,7 +32,7 @@ export PATH_STATE="${SCRIPT_PARENT}/state"
 export PATH_STATE_LAST_PLAYBOOK="${PATH_STATE}/last_playbook"
 export PATH_STATE_LAST_TAGS="${PATH_STATE}/last_tags"
 export PATH_STATE_VAULT_MAP="${PATH_STATE}/vault_id_map"
-export VERSION=261024
+export VERSION=261029
 export DEBUG=1
 export LOG=0
 
@@ -171,7 +171,7 @@ function main {
 			if [[ -v VAULT_MAP_ID_TO_METHOD["${id}"] ]]; then
 				method="${VAULT_MAP_ID_TO_METHOD["${id}"]}"
 			fi
-			vault_id_flags+=("--vault-id=${id}@${method}")
+			vault_id_flags+=("--vault-id ${id}@${method}")
 		done
 
 		# SET cmd
@@ -194,7 +194,7 @@ function main {
 
 		# PRINT version
 		echo "-------------------------------"
-		echo -e "Playbook:  ${GREEN}${playbook_name}${CLEAR}"
+		echo -e "${BOLD}Playbook:${CLEAR}  ${GREEN}${BOLD}${playbook_name}${CLEAR}"
 		echo -e "Hosts:     ${GREEN}${target_hosts[@]}${CLEAR}"
 		echo -e "Vault IDs: ${GREEN}${vault_ids[@]}${CLEAR}"
 		echo -e "Tags:      ${GREEN}${ANSIBLE_TAGS}${CLEAR}"

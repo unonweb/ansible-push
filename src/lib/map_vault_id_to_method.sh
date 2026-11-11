@@ -103,8 +103,11 @@ function map_vault_id_to_method { #${vault_ids[@]}
         done
 		echo "---"
 		echo -e "a) All at once"
-		echo -e "q) Quit"
+		echo -e "${BOLD}q) Quit${CLEAR}"
         read -p ">> " input
+
+		# If user pressed Enter, use the default
+		input="${input:-"q"}"
 
         if [[ "${input}" =~ ^[0-9]+$ ]] && (( input >= 1 && input <= ${#vault_map_keys[@]} )); then
 			# Map the 1-based menu choice back to the 0-based keys array index
