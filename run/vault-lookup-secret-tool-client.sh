@@ -8,6 +8,4 @@ elif [[ -n "${1}" ]]; then
 	vault_id="${1}"
 fi
 
-echo "Looking up ${ATTRIBUTE} ${vault_id} ..."
-
 secret-tool lookup "${ATTRIBUTE} "${vault_id}"
